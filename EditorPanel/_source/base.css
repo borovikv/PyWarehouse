@@ -1,0 +1,79 @@
+body{
+	width: 95%;
+	margin: 10px;
+}
+table{
+	border-spacing: 0;
+	width: 100%;
+}
+div#hColBar{
+	background-color: #AAA;
+	height: 20px;
+	position: absolute;
+	float: none;
+	display: none;
+}
+div#vRowBar{
+	background-color: #AAA;
+	width: 20px;
+	position: absolute;
+	float: none;
+	display: none;
+}
+td{
+	border: 1px solid black;
+	padding: 0px;
+	margin: 0px;
+	width: 40px;
+	height: 1em;
+}
+.Item{
+	margin: 1px;
+	border: 1px solid black;
+}
+.cl{
+	background: red;
+	
+}
+
+.Task{
+	border-bottom: 2px solid #888;
+}
+
+.TaskDone{
+	color: #888;
+	text-decoration: line-through;
+}
+
+.TaskText{
+	width: 90%;
+}
+
+.TaskTag{}
+.TaskTime{}
+table.TaskGroup td{
+	border: 0;
+	border-bottom:  2px solid #888;
+	padding: 5 px
+	
+}
+
+.TaskGroup{
+	border: 1px dashed black;
+	
+	width: 100%;
+}
+
+td.CheckBox{
+	width: 10px;
+	border: 0px;
+}
+
+.Tag{
+	color: red;
+}
+.TagText{
+	background: yellow;
+	font-weight: bold;
+}
+
