@@ -182,8 +182,10 @@ class Editor(QWebView):
                 
                 return {"url":url, "name":os.path.split(url)[1] }
 
-    def linkClicked(self):
-        pass
+    def openLink(self, url):
+        QtGui.QDesktopServices.openUrl(url)
+        return True
+    
     #####################################################################################################
     #
     # File operation
@@ -201,7 +203,7 @@ class Editor(QWebView):
         data = data.replace(self.defaultHeader, self.extendedHeader)
         self.setHtml(data, QtCore.QUrl.fromLocalFile(path))
         self.page().setLinkDelegationPolicy(QWebPage.DelegateAllLinks)
-        #self.linkClicked[QtCore.QUrl].connect(self.openLink)
+        self.linkClicked[QtCore.QUrl].connect(self.openLink)
         self.setPath(path)
         
         return True
@@ -435,7 +437,7 @@ class Editor(QWebView):
                 or e.matches(QtGui.QKeySequence.Bold)):
                 e.ignore()
                 return True
-            
+        #if e.type() == QWebView.l   
         return QWebView.event(self, e)
 
     ###################################################################################################
