@@ -49,7 +49,7 @@ class Editor(QWebView):
                    "table", 
                    "task_and_tag",
                    "unload",
-                   "actions"]
+                   ]
         self.makeHeader(scripts, css)
         self.installEventFilter(EditorFilter(self))      
         self.editor_actions = self.getActionMap()
@@ -60,7 +60,6 @@ class Editor(QWebView):
     
     def make_css_include(self, css):
         if not css: return ''
-        print css
         return "<link rel='stylesheet' href='%s.css' type='text/css' media='screen'/>"%(
                 os.path.join(Resources.getStylesFolder(), css))       
     

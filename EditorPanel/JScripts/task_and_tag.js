@@ -12,6 +12,25 @@ $(document).ready(function(){
 			$start.parents('.Task').remove();
 		}
 	})
+	$(document).bind('onTask', function(){
+		currentSelection = getCurrentSelection();
+		if(currentSelection == null) return null;
+		var $start = getJQStartElement(currentSelection);
+		if (!$start) return;
+		if ($start.parents().is(".TaskGroup")) return false;
+		
+		addElement(currentSelection, createTask, wrapTask, "taskGroup", "text");
+	})
+	$(document).bind('onTag', function(){
+		currentSelection = getCurrentSelection();
+		if(currentSelection == null) return null;
+		// var $start = getJQStartElement(currentSelection);
+		// if (!$start) return;
+		// if ($start.parents().is(".TaskGroup")) return false;
+		
+		addElement(currentSelection, createTag, wrapTag, "tag", "text");
+	})
+	
 	$("body").keydown(function(event){
 		var $start = getJQStartElement();
 		if (!$start) return;
@@ -24,21 +43,12 @@ $(document).ready(function(){
 			insertTaskAfter($start);
 			event.preventDefault();
 		} 
-		if ($start.parents().is(".TaskGroup") && testShortcut("ctrl + 3", event)){
-			return false;
-		} 
+		
 		if ($start.parents().is(".Tag") && (testKey("enter", event) || testKey("spaces", event))){
 			var spaces = document.createTextNode(" ");
 			$start.parents(".Tag").after($(spaces));
 			selectElement(spaces);
 			return false;
-		}
-		//---------------------------------------------------------------------------
-		
-		if(testShortcut("ctrl + 3", event)){
-			addElement(currentSelection, createTask, wrapTask, "taskGroup", "text");
-		} else if (testShortcut("ctrl + 2", event)){
-			addElement(currentSelection, createTag, wrapTag, "tag", "text");
 		}
 	});
 	
@@ -162,9 +172,11 @@ $(document).ready(function(){
 		$currentElement.parents(".Task").after($(task["task"]));
 		selectElement(task["text"])
 	}
-	function getJQStartElement(){
-		var currentSelection = getCurrentSelection();
-		if(currentSelection == null) return null;
+	function getJQStartElement(currentSelection){
+		if(!currentSelection){
+			currentSelection = getCurrentSelection();
+			if(currentSelection == null) return null;
+		}
 		var $start = $(currentSelection.getRangeAt(0).startContainer);
 		return $start;
 	}
