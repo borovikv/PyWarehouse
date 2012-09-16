@@ -137,7 +137,7 @@ class DOMTreeWidget(QtGui.QTreeView):
                 state = self.item_data(self.item)
             except:
                 state = ""
-            print unicode(state, 'utf-8')
+            #print unicode(state, 'utf-8')
             keeper.setLastState(state)
     
     ###############################################################################################

@@ -245,7 +245,7 @@ class Editor(QWebView):
     def rename(self, oldPath, newPath):
         oldPath = unicode(oldPath)
         newPath = unicode(newPath)
-        print oldPath, newPath
+        #print oldPath, newPath
         self.saveDoc()
         src = os.path.join(self.workFolder, oldPath)
         dst = os.path.join(self.workFolder, newPath)
@@ -467,7 +467,7 @@ class Editor(QWebView):
     
     def js_event_update(self, t, altKey, ctrlKey, shiftKey, which, keyCode):
         js = "update('%s', %s, %s, %s, %s, %s)"%(t, altKey, ctrlKey, shiftKey, which, keyCode)
-        print js
+        #print js
         self.evaluateJavaScript(js)
             
     def guessUrlFromString(self, link):
