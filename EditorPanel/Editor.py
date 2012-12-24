@@ -438,6 +438,9 @@ class Editor(QWebView):
                 return True
         #if e.type() == QWebView.l   
         return QWebView.event(self, e)
+    
+    def contextMenuEvent(self, *args, **kwargs):
+        pass
 
     ###################################################################################################
     #
