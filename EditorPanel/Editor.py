@@ -74,7 +74,7 @@ class Editor(QWebView):
         <meta http-equiv='Content-Type' content='text/html; charset=UTF-8'>
         <link rel='stylesheet' href='../_source/base.css' type='text/css' media='screen'/>
         %s
-        <head>
+        </head>
         """
         
         self.extendedHeader = ''
@@ -86,6 +86,7 @@ class Editor(QWebView):
         self.extendedHeader = def_head % self.extendedHeader
         
         self.defaultHeader = def_head % ''
+        
     
     
     #####################################################################################################
@@ -199,10 +200,11 @@ class Editor(QWebView):
             return False
         
         data = unicode(f.readAll(), 'utf-8')
-        data = data.replace(self.defaultHeader, self.extendedHeader)
+        data = re.sub(r'<head>[\w\W]*</head>', self.extendedHeader, data)
         self.setHtml(data, QtCore.QUrl.fromLocalFile(path))
         self.page().setLinkDelegationPolicy(QWebPage.DelegateAllLinks)
         self.linkClicked[QtCore.QUrl].connect(self.openLink)
+        self.setFocus()
         self.setPath(path)
         
         return True
@@ -210,7 +212,7 @@ class Editor(QWebView):
     def openDoc(self, path):
         self.loadFromPath(path)
     
-    def saveDoc(self, path = None):
+    def saveDoc(self, path = None, doc=None):
         if not hasattr(self, "path"):
             self.newDoc()
         
@@ -221,9 +223,9 @@ class Editor(QWebView):
         success = data.open(QtCore.QFile.WriteOnly | QtCore.QFile.Truncate)
         if success:        
             self.evaluateJavaScript('$(window).unload()')
-            html = self.page().mainFrame().toHtml()
-            rx = QtCore.QRegExp("<head>([\s\S\r]*)</head>")
-            html.replace(rx, self.defaultHeader)
+            html = doc or self.page().mainFrame().toHtml()
+            #rx = QtCore.QRegExp("<head>([\s\S\r]*)</head>")
+            #html.replace(rx, self.defaultHeader)
             html = html.toUtf8()
             c = data.write(html)
             success = (c >= html.length())
@@ -233,15 +235,23 @@ class Editor(QWebView):
     def setPath(self, path):
         self.path  = path
     
-    def newDoc(self):
+    def newDoc(self, path=None):
         source = QtCore.QFile(os.path.join(Resources.getSourcesFolderPath(), "sources.html"))
         source.open(QtCore.QIODevice.ReadOnly)
         html = QtCore.QString.fromUtf8(source.readAll())
-        self.page().mainFrame().setHtml(html)
+        html = html.replace(QtCore.QRegExp('<head>[\w\W]*</head>'),
+                            self.extendedHeader)
+#        
+#        self.page().mainFrame().setHtml(html)
+#        print self.page().mainFrame().toHtml()
+#        self.setFocus()
+#        self.page().setContentEditable(True)
+#        self.setPath("")
+#        
+        self.saveDoc(path, html)
+        self.setPath(path)
+        self.loadFromPath(path)
         
-        self.setFocus()
-        self.page().setContentEditable(True)
-        self.setPath("")
     def rename(self, oldPath, newPath):
         oldPath = unicode(oldPath)
         newPath = unicode(newPath)

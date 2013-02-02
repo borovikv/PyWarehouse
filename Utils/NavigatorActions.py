@@ -30,9 +30,9 @@ class NavigatorActions:
         
         if hasattr(self.editorPanel, 'path') and self.editorPanel.path:
             self.editorPanel.saveDoc()
-        self.editorPanel.newDoc()
-        self.editorPanel.saveDoc(path)
-        self.editorPanel.setPath(path)
+        self.editorPanel.newDoc(path)
+        #self.editorPanel.saveDoc(path)
+        #self.editorPanel.setPath(path)
         
     def renameNode(self, oldPath, newPath):
         self.editorPanel.rename(oldPath, newPath)
