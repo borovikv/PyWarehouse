@@ -236,11 +236,15 @@ class Editor(QWebView):
         self.path  = path
     
     def newDoc(self, path=None):
-        source = QtCore.QFile(os.path.join(Resources.getSourcesFolderPath(), "sources.html"))
-        source.open(QtCore.QIODevice.ReadOnly)
-        html = QtCore.QString.fromUtf8(source.readAll())
-        html = html.replace(QtCore.QRegExp('<head>[\w\W]*</head>'),
-                            self.extendedHeader)
+        src = os.path.join(Resources.getSourcesFolderPath(), "sources.html")
+        shutil.copyfile(src, path)
+        self.setPath(path)
+        self.loadFromPath(path)
+#        source = QtCore.QFile(os.path.join(Resources.getSourcesFolderPath(), "sources.html"))
+#        source.open(QtCore.QIODevice.ReadOnly)
+#        html = QtCore.QString.fromUtf8(source.readAll())
+#        html = html.replace(QtCore.QRegExp('<head>[\w\W]*</head>'),
+#                            self.extendedHeader)
 #        
 #        self.page().mainFrame().setHtml(html)
 #        print self.page().mainFrame().toHtml()
@@ -248,9 +252,7 @@ class Editor(QWebView):
 #        self.page().setContentEditable(True)
 #        self.setPath("")
 #        
-        self.saveDoc(path, html)
-        self.setPath(path)
-        self.loadFromPath(path)
+#        self.saveDoc(path, html)
         
     def rename(self, oldPath, newPath):
         oldPath = unicode(oldPath)
