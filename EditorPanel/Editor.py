@@ -42,50 +42,25 @@ class Editor(QWebView):
         self.workFolder = workFolder
         self.urlForCopy = None
         self.sources_preparate()
-        css = []
-        scripts = ["jquery", 
-                   "utils", 
-                   "formatting", 
-                   "table", 
-                   "task_and_tag",
-                   "unload",
-                   ]
-        self.makeHeader(scripts, css)
+        self.makeHeader()
         self.installEventFilter(EditorFilter(self))      
         self.editor_actions = self.getActionMap()
-
-    def make_js_include(self, js):
-        return "<script src='%s.js' type='text/javascript'></script>"%(
-                os.path.join(Resources.getScriptsFolder(), js))
-    
-    def make_css_include(self, css):
-        if not css: return ''
-        return "<link rel='stylesheet' href='%s.css' type='text/css' media='screen'/>"%(
-                os.path.join(Resources.getStylesFolder(), css))       
-    
-    def scriptTag(self):
-        js = "<script type='text/javascript'>"
-        js += "imgFolder = 'file://%s'"%Resources.getImageFolderPath()
-        js += "</script>"
-        return js
      
-    def makeHeader(self, scripts, *css):
-        def_head = """<head>
+    def makeHeader(self):
+        self.defaultHeader = """<head>
         <meta http-equiv='Content-Type' content='text/html; charset=UTF-8'>
         <link rel='stylesheet' href='../_source/base.css' type='text/css' media='screen'/>
         %s
         </head>
         """
+        args = { 'imgFolder': Resources.getImageFolderPath(),
+                 'scriptFolderPath': Resources.getScriptsFolder(),
+                 'cssFolderPath': Resources.getStylesFolder(), }
+        f = file(Resources.getSource('header.html'))
+        header = unicode(f.read())
+        reg = re.compile(r'{{\s*(\w+)\s*}}')
+        self.extendedHeader = reg.sub(lambda x: args.get(x.group(1)), header)
         
-        self.extendedHeader = ''
-        for c in css:
-            self.extendedHeader += self.make_css_include(c)
-        self.extendedHeader += self.scriptTag()
-        for js in scripts:
-            self.extendedHeader += self.make_js_include(js)    
-        self.extendedHeader = def_head % self.extendedHeader
-        
-        self.defaultHeader = def_head % ''
         
     
     
@@ -521,6 +496,10 @@ class Editor(QWebView):
         return but 
     
     def sources_preparate(self):
+        """
+        копирует папку _source или только недостающие файлы 
+        в директорию с заметками
+        """
         sourceFolder = os.path.join(self.workFolder, '_source')
         src = os.path.join(Resources.getSourcesFolderPath())
         def func(arg, dirname, names):

@@ -32,7 +32,7 @@ class Resources:
     
     @staticmethod
     def getSource(name):
-        return os.path.join('..', '_source', name)
+        return os.path.join(Resources.getSourcesFolderPath(), name)
         
     
     @staticmethod
