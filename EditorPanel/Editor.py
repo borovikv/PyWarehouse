@@ -42,6 +42,9 @@ class Editor(QWebView):
         self.workFolder = workFolder
         self.urlForCopy = None
         self.sources_preparate()
+        self.context =  { 'imgFolder': Resources.getImageFolderPath(),
+                          'scriptFolderPath': Resources.getScriptsFolder(),
+                          'cssFolderPath': Resources.getStylesFolder(), }
         self.makeHeader()
         self.installEventFilter(EditorFilter(self))      
         self.editor_actions = self.getActionMap()
@@ -53,15 +56,15 @@ class Editor(QWebView):
         %s
         </head>
         """
-        args = { 'imgFolder': Resources.getImageFolderPath(),
-                 'scriptFolderPath': Resources.getScriptsFolder(),
-                 'cssFolderPath': Resources.getStylesFolder(), }
+        
         f = file(Resources.getSource('header.html'))
         header = unicode(f.read())
+        
+        self.extendedHeader = self.render_template(header, self.context)
+    
+    def render_template(self, template, context):
         reg = re.compile(r'{{\s*(\w+)\s*}}')
-        self.extendedHeader = reg.sub(lambda x: args.get(x.group(1)), header)
-        
-        
+        return reg.sub(lambda x: context.get(x.group(1)), template)
     
     
     #####################################################################################################
@@ -174,9 +177,10 @@ class Editor(QWebView):
         if not f.open(QtCore.QFile.ReadOnly):
             return False
         
-        data = unicode(f.readAll(), 'utf-8')
-        data = re.sub(r'<head>[\w\W]*</head>', self.extendedHeader, data)
-        self.setHtml(data, QtCore.QUrl.fromLocalFile(path))
+        template = unicode(f.readAll(), 'utf-8')
+        #template = re.sub(r'<head>[\w\W]*</head>', self.extendedHeader, data)
+        template = self.render_template(template, self.context)
+        self.setHtml(template, QtCore.QUrl.fromLocalFile(path))
         self.page().setLinkDelegationPolicy(QWebPage.DelegateAllLinks)
         self.linkClicked[QtCore.QUrl].connect(self.openLink)
         self.setFocus()
