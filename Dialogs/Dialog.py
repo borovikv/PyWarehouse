@@ -4,6 +4,8 @@ Created on 07.07.2012
 @author: vb
 '''
 from PyQt4 import QtCore, QtGui
+from Utils.Strings import getTranslate
+from Utils.QUtils import makeButton
 
 class DialogBox(QtGui.QWidget):
     def __init__(self, width, height, color, parent = None):
@@ -26,7 +28,29 @@ class DialogBox(QtGui.QWidget):
         painter.setBrush(QtGui.QBrush(qColor))
         painter.drawRoundRect(QtCore.QRectF(0.0, 0.0, float(width), float(height)), xRound, yRound)
 
-
+class DualLineDialog(DialogBox):
+    def __init__(self, parent = None):
+        super(DualLineDialog, self).__init__(600, 300, "#aaa", parent)
+        vbox = QtGui.QVBoxLayout()
+        self.first_line = QtGui.QLineEdit()
+        self.second_line = QtGui.QLineEdit()
+        close_button =makeButton("close", None, self.hide)
+        find_button =makeButton("find", None, self.hide)
+        find_all_button =makeButton("find all", None, self.hide)
+        replace_button =makeButton("replace", None, self.hide)
+        replace_all_button =makeButton("replace all", None, self.hide)
+        hbox = QtGui.QHBoxLayout
+        vbox.addWidget(self.first_line)
+        vbox.addWidget(self.second_line)
+        
+        vbox.addWidget(close_button)
+        self.setLayout(vbox)
+        
+    def getFirstLineText(self):
+        return self.first_line.text()
+    def getSecondLineText(self):
+        return self.second_line.text()
+    
 if __name__=="__main__":
     import sys
     app = QtGui.QApplication(sys.argv)

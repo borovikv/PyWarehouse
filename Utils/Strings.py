@@ -8,7 +8,8 @@ Created on Jul 11, 2012
 def getTranslate(s, lang="ru"):
     translations = {
                     "warehouseXML": "path to file", 
-                    "browse": "Browse"
+                    "browse": "Browse",
+                    "close": "Close"
     }
     if translations.has_key(s):
         return translations[s]

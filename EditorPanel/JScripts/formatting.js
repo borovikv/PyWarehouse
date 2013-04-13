@@ -44,6 +44,16 @@ $(document).ready(function(){
 	function insertHR(){
 		execCommand("insertHorizontalRule", false, null)
 	}
+	///!
+	function replace() {
+		replace.count = 0;
+		ONLY_FIRST = true
+		if (ONLY_FIRST){
+			replace.count += 1
+		}
+		alert(replace.count)
+		$("body").replaceText(OLD_TEXT, NEW_TEXT);
+	}
 	/////////////////////////////////////////////////////////////////////////////////
 	// events
 	/////////////////////////////////////////////////////////////////////////////////
@@ -54,9 +64,9 @@ $(document).ready(function(){
 			 .bind("onUList",uList)
 			 .bind("onOList",oList)
 			 .bind("onRemoveFormat",removeFormat)
-			 .bind("insertHorizontalRule", insertHR);
+			 .bind("insertHorizontalRule", insertHR)
+			 .bind("replace", replace);
 	
-
 });
 
 
