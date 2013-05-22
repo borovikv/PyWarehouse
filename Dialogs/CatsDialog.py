@@ -271,8 +271,8 @@ class CatsDialog(DialogBox, Observable):
             return False
         elif cmd in self.self_action_list:
             return True
-        else:
-            return self.parent().has_params(cmd)
+#        else:
+#            return self.parent().has_params(cmd)
       
     def execute(self, cmd, params):
         self.self_action_list.get(cmd)(params)

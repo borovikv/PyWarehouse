@@ -29,7 +29,7 @@ $(document).ready(function(){
 			vRowBar.hide();
 		}	
 	})	
-	$("body").bind("onCreateTable", function(){
+	$("body").bind("onCreateTable", function(event, ROW_COL){
 				createTable(ROW_COL);
 			})
 			 .bind("onInsertColBefore", function(){

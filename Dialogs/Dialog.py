@@ -29,21 +29,26 @@ class DialogBox(QtGui.QWidget):
         painter.drawRoundRect(QtCore.QRectF(0.0, 0.0, float(width), float(height)), xRound, yRound)
 
 class DualLineDialog(DialogBox):
-    def __init__(self, parent = None):
+    def __init__(self, parent):
         super(DualLineDialog, self).__init__(600, 300, "#aaa", parent)
         vbox = QtGui.QVBoxLayout()
         self.first_line = QtGui.QLineEdit()
         self.second_line = QtGui.QLineEdit()
         close_button =makeButton("close", None, self.hide)
-        find_button =makeButton("find", None, self.hide)
-        find_all_button =makeButton("find all", None, self.hide)
-        replace_button =makeButton("replace", None, self.hide)
-        replace_all_button =makeButton("replace all", None, self.hide)
-        hbox = QtGui.QHBoxLayout
+        find_button =makeButton("find", None, parent.find_next)
+        find_all_button =makeButton("find all", None, parent.find_all)
+        replace_button =makeButton("replace", None, parent.replace_next)
+        replace_all_button =makeButton("replace all", None, parent.replace_all)
+        hbox = QtGui.QHBoxLayout()
+        hbox.addWidget(find_button)
+        hbox.addWidget(find_all_button)
+        hbox.addWidget(replace_button)
+        hbox.addWidget(replace_all_button)
         vbox.addWidget(self.first_line)
         vbox.addWidget(self.second_line)
         
         vbox.addWidget(close_button)
+        vbox.addLayout(hbox)
         self.setLayout(vbox)
         
     def getFirstLineText(self):

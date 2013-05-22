@@ -118,9 +118,6 @@ class Warehouse(QtGui.QWidget, Observable):
         self.editorPanel.newDoc()
         actions = NavigatorActions(self.editorPanel, self.preferences.getNotesFolder())
         self.treePanel.updateModel(self.preferences.xmlPath, actions)
-    
-    def has_params(self, cmd):
-        return self.editorPanel.has_params(cmd)
         
         
 

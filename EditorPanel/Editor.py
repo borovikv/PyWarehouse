@@ -81,47 +81,42 @@ class Editor(QWebView):
         return interfaceElements
     
     def getActionMap(self):
-        actions = {}
-        actions["insert table"] = self.onCreateTable
-        actions["column after"] = 'onInsertColAfter'
-        actions["column before"] = 'onInsertColBefore'
-        actions["row after"] = 'onInsertRowAfter'
-        actions["row before"] = 'onInsertRowBefore'
-        actions["delete column"] = 'onDeleteCol'
-        actions["delete row"] = 'onDeleteRow'
-        
-        actions["bold"] = 'onBold'
-        actions["underline"] = 'onUnderline'
-        actions["italic"] = 'onItalic'
-        actions["orderer list"] = 'onOList'
-        actions["unorderer list"] = 'onUList'
-        actions["highlight"] = 'onHighlight'
-        actions["horizontal rule"] = 'insertHorizontalRule'
-        actions["remove format"] = 'onRemoveFormat'
-        
-        #actions["insert tag"] = 'onTag'
-        actions["insert task"] = 'onTask'
-        actions["delete task"] = 'onDeleteTask'
-        
-        actions["insert object"] = self.onInsert
-        
-        actions["show in folder"] = self.showInFolder
-        actions["find or replace"] = self.find_or_replace
-        
+        actions = {
+                   "insert table": 'onCreateTable', 
+                    "column after": 'onInsertColAfter', 
+                    "column before": 'onInsertColBefore', 
+                    "row after": 'onInsertRowAfter', 
+                    "row before": 'onInsertRowBefore', 
+                    "delete column": 'onDeleteCol', 
+                    "delete row": 'onDeleteRow', 
+                    
+                    "bold": 'onBold', 
+                    "underline": 'onUnderline', 
+                    "italic": 'onItalic', 
+                    "orderer list": 'onOList', 
+                    "unorderer list": 'onUList', 
+                    "highlight": 'onHighlight', 
+                    "horizontal rule": 'insertHorizontalRule', 
+                    "remove format": 'onRemoveFormat', 
+                    
+                    #"insert tag": 'onTag', 
+                    "insert task": 'onTask', 
+                    "delete task": 'onDeleteTask', 
+                    
+                    "insert object": self.onInsert,
+                    
+                    "show in folder": self.showInFolder,
+                    "find or replace": self.find_or_replace,
+                }
         return actions
     
     def  execute(self, cmd, s_arg = None):
         action = self.editor_actions.get(cmd)
         if not action: return
         if isinstance(action, basestring):
-            self.js_event(action)
-        elif self.has_params(cmd) and s_arg:
-            action(s_arg)
+            self.js_event(action, s_arg)
         else:
             action()
-    
-    def has_params(self, cmd):
-        return cmd.lower() in ( 'insert table', 'find on page', 'replace')
             
     def showInFolder(self):
         if self.path:
@@ -129,19 +124,28 @@ class Editor(QWebView):
     
     def find_or_replace(self):
         self.findReplaceDialog.show()
-        text, newtext = ( self.findReplaceDialog.getFirstLineText(), 
-                          self.findReplaceDialog.getSecondLineText() )
+    
+    def get_text_to_find(self, text):        
         if not text:
             text = self.selectedText()
+        return text
+    
+    def find_next(self, text=None):
+        print text
+        text = self.get_text_to_find(text)
+        self.findText(text)
+    def find_all(self, text=None):
+        text = self.get_text_to_find(text)
+        self.findText(text, QWebPage.HighlightAllOccurrences)
+    def replace_next(self, text=None, newtext=None):
+        text = self.get_text_to_find(text)
+        self.js_event('replace', 'next', text, newtext)
+    def replace_all(self, text=None, newtext=None):
+        text = self.get_text_to_find(text)
+        self.js_event('replace', 'all', text, newtext)
+    
         
-        if not newtext:
-            self.findText(text, QWebPage.HighlightAllOccurrences)
-        else:
-            self.js_event_with_param('replace', OLD_TEXT=text, NEW_TEXT=newtext)
         
-    def onCreateTable(self, row_col="2,2"): 
-        self.js_event_with_param("onCreateTable", ROW_COL=row_col)
-
     def onInsert(self):
         self.insertDialog.exec_()
         path = self.insertDialog.path
@@ -323,16 +327,15 @@ class Editor(QWebView):
     def insertHtml(self, htmlText):
         self.execCommand("insertHTML", htmlText)
     
-    def js_event(self, event):
-        js = "$('body').trigger('%s')"%event
+    def js_event(self, event, *args):
+        extra_parameters = ''
+        for argument in args:
+            extra_parameters += "'%s',"%argument
+        if extra_parameters:
+            js = "$('body').trigger('%s', [%s])"%(event, extra_parameters)
+        else:
+            js = "$('body').trigger('%s')"%event
         self.evaluateJavaScript(js)   
-    
-    def js_event_with_param(self, event, **params):
-        for p in params:
-            self.evaluateJavaScript("%s='%s'"%(p, params[p]))
-        self.js_event(event)
-
-            
     
     def js_event_update(self, t, altKey, ctrlKey, shiftKey, which, keyCode):
         js = "update('%s', %s, %s, %s, %s, %s)"%(t, altKey, ctrlKey, shiftKey, which, keyCode)
