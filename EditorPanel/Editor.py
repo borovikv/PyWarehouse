@@ -146,23 +146,32 @@ class Editor(QWebView):
     
         
         
+
+
     def onInsert(self):
         self.insertDialog.exec_()
         path = self.insertDialog.path
         if not path: return
         
         if is_image(path):
-            f = copy_file(path, self.get_path_to_folder(Editor.IMG_FOLDER), None)
-            if not f: return
-            self.execCommand("insertImage", f)
+            self.copy_image_and_insert_into_html(path)
         elif os.path.isfile(path):    
-            f = self.insertFile(path)
-            icon = Resources.getSource("File.png")
-            htmlText = "&nbsp;<div class='File'><a href='%s'><img src='%s'>%s</a></div>&nbsp"%( f["url"], icon, f["name"])
-            self.insertHtml(htmlText)
+            self.copy_file_and_insert_link(path)
         else:
             self.execCommand("createLink", path);
              
+    def copy_file_and_insert_link(self, path):
+        f = self.insertFile(path)
+        icon = Resources.getSource("File.png")
+        htmlText = "&nbsp;<div class='File'><a href='%s'><img src='%s'>%s</a></div>&nbsp" % (f["url"], icon, f["name"])
+        self.insertHtml(htmlText)
+
+
+    def copy_image_and_insert_into_html(self, path):
+        f = copy_file(path, self.get_path_to_folder(Editor.IMG_FOLDER), None)
+        if f:
+            self.execCommand("insertImage", f)
+
     def insertFile(self, link):        
         link = _qstr(link)
         if link.isEmpty():
@@ -184,17 +193,30 @@ class Editor(QWebView):
     # File operation
     #
     #####################################################################################################    
-    def loadFromPath(self, path):
-        if not QtCore.QFile.exists(path):
-            return False
-        
+
+    
+    def insert_header_if_not_exist(self, template):
+        #template = re.sub(r'<head>[\w\W]*</head>', self.extendedHeader, data)
+        pass
+    
+    
+
+    def get_template_from_path(self, path):
+        if not QtCore.QFile.exists(path): #return False
+            return
         f = QtCore.QFile(path)
         if not f.open(QtCore.QFile.ReadOnly):
-            return False
+            return
         
         template = unicode(f.readAll(), 'utf-8')
-        #template = re.sub(r'<head>[\w\W]*</head>', self.extendedHeader, data)
         template = render_template(template, self.context)
+        self.insert_header_if_not_exist(template)
+        return template
+
+    def loadFromPath(self, path):
+        template = self.get_template_from_path(path)
+        if not template:
+            return False
         self.setHtml(template, QtCore.QUrl.fromLocalFile(path))
         self.page().setLinkDelegationPolicy(QWebPage.DelegateAllLinks)
         self.linkClicked[QtCore.QUrl].connect(self.openLink)
