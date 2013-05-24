@@ -270,28 +270,31 @@ class Editor(QWebView):
     # Paste IMG 
     #
     #####################################################################################################  
-    #  interface
     def pastePreparation(self):
-        
-        dest = self.get_path_to_folder(Editor.IMG_FOLDER)
-        
         clipboard = QtGui.QApplication.clipboard() 
         
         text = clipboard.text("html")
-        if not text: return
-                
-        newImgs = copy_img_html(text, dest, self.urlForCopy)
-        #[old_src: new_src]
-        if not newImgs: return
-        
-        for img in newImgs:
-            if img and newImgs[img]:
-                text.replace(_qstr(img), _qstr(newImgs[img]))
+        if not text: 
+            return        
+        newImgs = self.download_all_images_from_html(text)
+        if not newImgs: 
+            return
+        self.replace_img_src_by_local_src(text, newImgs)
             
         data = QtCore.QMimeData()
         data.setHtml(text)
         clipboard.setMimeData(data)
                 
+    def replace_img_src_by_local_src(self, text, newImgs):
+        # newImgs = [old_src: new_src]
+        for img in newImgs:
+            if img and newImgs[img]:
+                text.replace(_qstr(img), _qstr(newImgs[img]))
+
+    def download_all_images_from_html(self, text):
+        dest = self.get_path_to_folder(Editor.IMG_FOLDER)
+        newImgs = copy_img_html(text, dest, self.urlForCopy)
+        return newImgs
     
     def setUrlForCopy(self):
         self.urlForCopy = self.path
