@@ -24,7 +24,6 @@ from Dialogs.Dialog import DualLineDialog
 locale.setlocale(locale.LC_ALL, '')
         
 
-# Actions block
 # Редактировать
 # File operation
 # Functionality
