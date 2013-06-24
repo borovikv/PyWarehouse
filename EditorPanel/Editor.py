@@ -20,7 +20,7 @@ from Utils.utils import render_template, copy_img_html, delete_files,\
     make_dir_if_not_exist, copy_local_file, copy_file, copy_folder, is_image, get_name
 from Utils.QUtils import openFolder, getGoodUrl
 from PyQt4.QtCore import QString as _qstr
-from Dialogs.Dialog import DualLineDialog
+from Dialogs.Dialog import LineDialog
 locale.setlocale(locale.LC_ALL, '')
         
 
@@ -39,13 +39,14 @@ class Editor(QWebView):
     def __init__(self, workFolder, parent = None):
         QWebView.__init__(self, parent)
         self.insertDialog = InsertDialog(self)
-        self.findReplaceDialog = DualLineDialog(self)
+        self.findReplaceDialog = LineDialog(self)
+        self.findReplaceDialog.setButtonListener('find', self.findNext)
+        self.findReplaceDialog.setButtonListener('find all', self.findAll)
         self.workFolder = workFolder
         self.urlForCopy = None
         self.path = None
         
-        # copy nessesary files to workFolder
-        self.sources_preparate()
+        self.copy_source_files_to_workfolder()
         # context for makeHeader and load from path
         self.context =  { 'imgFolder': Resources.getImageFolderPath(),
                           'scriptFolderPath': Resources.getScriptsFolder(),
@@ -105,42 +106,38 @@ class Editor(QWebView):
                     "insert object": self.onInsert,
                     
                     "show in folder": self.showInFolder,
-                    "find or replace": self.find_or_replace,
+                    "find or replace": self.findReplace,
                 }
         return actions
     
-    def  execute(self, cmd, s_arg = None):
-        action = self.editor_actions.get(cmd)
-        if not action: return
-        if isinstance(action, basestring):
-            self.js_event(action, s_arg)
-        else:
-            action()
+    
             
     def showInFolder(self):
         if self.path:
             openFolder(self, self.get_path_to_folder(Editor.SELF))
     
-    def find_or_replace(self):
+    def findReplace(self):
         self.findReplaceDialog.show()
     
-    def get_text_to_find(self, text):        
+    def getText(self, text):        
         if not text:
             text = self.selectedText()
         return text
     
-    def find_next(self, text=None):
-        print text
-        text = self.get_text_to_find(text)
+    def findNext(self, text=None):
+        print 'slkdjfi'
+        text = self.getText(text)
+        print "text", text
         self.findText(text)
-    def find_all(self, text=None):
-        text = self.get_text_to_find(text)
+    
+    def findAll(self, text=None):
+        text = self.getText(text)
         self.findText(text, QWebPage.HighlightAllOccurrences)
-    def replace_next(self, text=None, newtext=None):
-        text = self.get_text_to_find(text)
+    def replaceNext(self, text=None, newtext=None):
+        text = self.getText(text)
         self.js_event('replace', 'next', text, newtext)
-    def replace_all(self, text=None, newtext=None):
-        text = self.get_text_to_find(text)
+    def replaceAll(self, text=None, newtext=None):
+        text = self.getText(text)
         self.js_event('replace', 'all', text, newtext)
     
         
@@ -251,6 +248,8 @@ class Editor(QWebView):
         self.path  = path
     
     def newDoc(self, path=None):
+        if not path:
+            return
         src = join(Resources.getSourcesFolderPath(), "sources.html")
         shutil.copyfile(src, path)
         self.setPath(path)
@@ -276,14 +275,21 @@ class Editor(QWebView):
         text = clipboard.text("html")
         if not text: 
             return        
+        
         newImgs = self.download_all_images_from_html(text)
         if not newImgs: 
             return
+        
         self.replace_img_src_by_local_src(text, newImgs)
             
         data = QtCore.QMimeData()
         data.setHtml(text)
         clipboard.setMimeData(data)
+
+    def download_all_images_from_html(self, text):
+        dest = self.get_path_to_folder(Editor.IMG_FOLDER)
+        newImgs = copy_img_html(text, dest, self.urlForCopy)
+        return newImgs
                 
     def replace_img_src_by_local_src(self, text, newImgs):
         # newImgs = [old_src: new_src]
@@ -291,10 +297,6 @@ class Editor(QWebView):
             if img and newImgs[img]:
                 text.replace(_qstr(img), _qstr(newImgs[img]))
 
-    def download_all_images_from_html(self, text):
-        dest = self.get_path_to_folder(Editor.IMG_FOLDER)
-        newImgs = copy_img_html(text, dest, self.urlForCopy)
-        return newImgs
     
     def setUrlForCopy(self):
         self.urlForCopy = self.path
@@ -317,7 +319,14 @@ class Editor(QWebView):
     
     def contextMenuEvent(self, *args, **kwargs):
         pass
-
+    
+    def  execute(self, cmd, s_arg = None):
+        action = self.editor_actions.get(cmd)
+        if not action: return
+        if isinstance(action, basestring):
+            self.js_event(action, s_arg)
+        else:
+            action()
     ###################################################################################################
     #
     # Utils js
@@ -376,26 +385,37 @@ class Editor(QWebView):
     # Observe
     #
     ######################################################################################################################
+
     def update(self, event):
         if event.type == ObservableEvent.start:
-            path = event.getParam(ObservableEvent.path)
-            if os.path.exists(path):
-                self.openDoc(path)
-            else:
-                self.newDoc()
-            
-        if event.type == ObservableEvent.close and hasattr(self, 'path') and self.path:
-            self.saveDoc()
-            self.delete_unnecessary()
+            self.on_start(event)
+        
+        if event.type == ObservableEvent.close:
+            self.on_close(event)
         
         if event.type is ObservableEvent.execute:
-            self.execute(event.getParam('command'), event.getParam('params'))
+            self.on_execute(event)
+
+    def on_start(self, event):
+        path = event.getParam(ObservableEvent.path)
+        if os.path.exists(path):
+            self.openDoc(path)
+
+
+    def on_close(self, event):
+        if hasattr(self, 'path') and self.path:
+            self.saveDoc()
+            self.delete_unnecessary()
+
+    def on_execute(self, event):
+        self.execute(event.getParam('command'), event.getParam('params'))
+
             
     #==============================================================================================
     # Start and Stop 
     #==============================================================================================     
     
-    def sources_preparate(self):
+    def copy_source_files_to_workfolder(self):
         """
         копирует папку _source или только недостающие файлы 
         в директорию с заметками
@@ -404,13 +424,18 @@ class Editor(QWebView):
         dest = self.get_path_to_folder(Editor.SOURCE_FOLDER)
         copy_folder(src, dest, lambda name: True)
         
+
     def delete_unnecessary(self):
-        necesary_img = [get_name(e.attribute('src')) 
-                    for e in self.findAllElements('img')]
-        
-        necesary_files = [get_name(e.attribute('href'))
-                 for e in self.findAllElements('div.File>a')]
-        
-        delete_files(self.get_path_to_folder(Editor.IMG_FOLDER), lambda f: not f in necesary_img)
-        delete_files(self.get_path_to_folder(Editor.FILES_FOLDER), lambda f: not f in necesary_files)
+        self.delete_unnecessary_img()
+        self.delete_unnecessary_files()
+    
+    def delete_unnecessary_img(self):
+        self.__delete_unnecessary('src', 'img', Editor.IMG_FOLDER)
+
+    def delete_unnecessary_files(self):
+        self.__delete_unnecessary('href', 'div.File>a', Editor.FILES_FOLDER)
+
+    def __delete_unnecessary(self, attr, elem, folder):
+        necesary = [get_name(e.attribute(attr)) for e in self.findAllElements(elem)]
+        delete_files(self.get_path_to_folder(folder), lambda f:not f in necesary)
             

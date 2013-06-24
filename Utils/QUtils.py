@@ -5,12 +5,13 @@ Created on Apr 5, 2013
 '''
 from PyQt4 import QtGui, QtCore
 
-def makeButton(name, icon, func):
+def makeButton(name, icon=None, func=None):
     if icon:
         but = QtGui.QPushButton(icon, name)
     else:
         but = QtGui.QPushButton(name)
-    but.clicked.connect(func) 
+    if func:
+        but.clicked.connect(func) 
     return but 
 
 def openFolder(parent, path):

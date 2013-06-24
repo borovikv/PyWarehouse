@@ -28,43 +28,64 @@ class DialogBox(QtGui.QWidget):
         painter.setBrush(QtGui.QBrush(qColor))
         painter.drawRoundRect(QtCore.QRectF(0.0, 0.0, float(width), float(height)), xRound, yRound)
 
-class DualLineDialog(DialogBox):
-    def __init__(self, parent):
-        super(DualLineDialog, self).__init__(600, 300, "#aaa", parent)
+class LineDialog(DialogBox):
+
+    def __init__(self, lines, buttons, parent=None):
+        super(LineDialog, self).__init__(600, 300, "#aaa", parent)
         vbox = QtGui.QVBoxLayout()
-        self.first_line = QtGui.QLineEdit()
-        self.second_line = QtGui.QLineEdit()
-        close_button =makeButton("close", None, self.hide)
-        find_button =makeButton("find", None, parent.find_next)
-        find_all_button =makeButton("find all", None, parent.find_all)
-        replace_button =makeButton("replace", None, parent.replace_next)
-        replace_all_button =makeButton("replace all", None, parent.replace_all)
+        
+        self.makeLines(lines)
+        self.addLinesToLayout(vbox)
+        
+        self.makeButtons(buttons)
         hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(find_button)
-        hbox.addWidget(find_all_button)
-        hbox.addWidget(replace_button)
-        hbox.addWidget(replace_all_button)
-        vbox.addWidget(self.first_line)
-        vbox.addWidget(self.second_line)
-        
-        vbox.addWidget(close_button)
+        self.addButtonsToLayout(hbox, ('close',))
         vbox.addLayout(hbox)
-        self.setLayout(vbox)
+                
+        self.addCloseButton(vbox)
         
-    def getFirstLineText(self):
-        return self.first_line.text()
-    def getSecondLineText(self):
-        return self.second_line.text()
+        self.setLayout(vbox)
+    
+    def makeLines(self, lines):
+        self.lines = []
+        for _ in range(lines):
+            self.lines.append(QtGui.QLineEdit())
+
+    def addLinesToLayout(self, layout):
+        for line in self.lines:
+            layout.addWidget(line)
+
+    def makeButtons(self, buttons):
+        self.buttons = {}
+        self.makeButton("close", "close", self.hide)
+        for name, (text, listener) in buttons.items():
+            self.makeButton(name, text, listener)
+    
+    def makeButton(self, name, text, listener):
+        return self.buttons.setdefault(name, makeButton(text, func=listener))
+
+    def addButtonsToLayout(self, layout, exclude):
+        for name in self.buttons:
+            if exclude and name in exclude:
+                continue
+            layout.addWidget(self.buttons[name])
+                            
+    def addCloseButton(self, vbox):
+        hbox = QtGui.QHBoxLayout()
+        hbox.addStretch()
+        hbox.addWidget(self.buttons.get('close'))
+        vbox.addLayout(hbox)
+
+        
+    def getLineText(self, position):
+        if position < len(self.lines):
+            return self.lines[position].text()
+    
     
 if __name__=="__main__":
     import sys
     app = QtGui.QApplication(sys.argv)
-    d = DialogBox(600, 300, "#aaa")
-    vbox = QtGui.QVBoxLayout()
-    textField = QtGui.QLineEdit()
-    vbox.addWidget(textField)
-    d.setLayout(vbox)
-    
+    d = LineDialog(2, {'a':('aa', lambda: 'a'), 'b': ('bb', lambda: 'b') })    
     d.show()
     sys.exit(app.exec_())
         
