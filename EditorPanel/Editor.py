@@ -20,15 +20,11 @@ from Utils.utils import render_template, copy_img_html, delete_files,\
     make_dir_if_not_exist, copy_local_file, copy_file, copy_folder, is_image, get_name
 from PyQt4.QtCore import QString as _qstr
 from Dialogs.Dialog import LineDialog, FindReplaceDialog
+from BeautifulSoup import BeautifulSOAP, BeautifulSoup
+import re
 locale.setlocale(locale.LC_ALL, '')
         
 
-# Редактировать
-# File operation
-# Functionality
-# Paste IMG 
-# Utils
-# Observe
 class Editor(QWebView):
     FILES_FOLDER = "Files" 
     IMG_FOLDER = "IMG"
@@ -54,6 +50,15 @@ class Editor(QWebView):
         f = file(Resources.getSource('header.html'))
         header = unicode(f.read())
         self.extendedHeader = header%self.context
+    
+    def copySourceFilesToWorkfolder(self):
+        """
+        копирует папку _source или только недостающие файлы 
+        в директорию с заметками
+        """
+        src = Resources.getSourcesFolderPath()
+        dest = self.getPathToFolder(Editor.SOURCE_FOLDER)
+        copy_folder(src, dest, lambda name: True)
     
     
     def getInterfacesElements(self):
@@ -90,7 +95,7 @@ class Editor(QWebView):
             
     def showInFolder(self):
         if self.path:
-            QUtils.openFolder(self, self.get_path_to_folder(Editor.SELF))
+            QUtils.openFolder(self, self.getPathToFolder(Editor.SELF))
     
     def findReplace(self):
         self.findReplaceDialog.show()
@@ -106,12 +111,12 @@ class Editor(QWebView):
     def replaceNext(self):
         text = self.getTextToFind()
         newtext = self.getTextToReplace()
-        self.js_event('replace', 'next', text, newtext)
+        self.jsTrigger('replace', 'next', text, newtext)
     
     def replaceAll(self):
         newtext=None
         text = self.getTextToFind()
-        self.js_event('replace', 'all', text, newtext)
+        self.jsTrigger('replace', 'all', text, newtext)
     
     def getTextToFind(self):     
         text = self.findReplaceDialog.getLineText(0)   
@@ -144,7 +149,7 @@ class Editor(QWebView):
         self.insertHtml(htmlText)
 
     def copyImage(self, path):
-        return copy_file(path, self.get_path_to_folder(Editor.IMG_FOLDER), None)
+        return copy_file(path, self.getPathToFolder(Editor.IMG_FOLDER), None)
 
     def copyFile(self, link):        
         link = _qstr(link)
@@ -152,7 +157,7 @@ class Editor(QWebView):
             return
         url = QUtils.getGoodUrl(link)
         if url.isValid():
-            dst = self.get_path_to_folder(Editor.FILES_FOLDER)
+            dst = self.getPathToFolder(Editor.FILES_FOLDER)
             make_dir_if_not_exist(dst) 
             url = copy_local_file(unicode(url.toString(), 'utf-8')[7:], dst)
             
@@ -161,103 +166,6 @@ class Editor(QWebView):
     def openLink(self, url):
         QtGui.QDesktopServices.openUrl(url)
         return True
-    
-    #---------------------------------------------------------------------------
-    def openDoc(self, path):
-        self.loadFromPath(path)
-    
-    
-    def saveDoc(self, path=None):
-        path = self.getPath(path)
-        if not path: return
-        
-        success, f = QUtils.openFile(path)
-        if success:        
-            self.onSave()
-            success = self.saveFile(f)
-        self.setWindowModified(False)
-        return success
-
-    def getPath(self, path=None):
-        if not path and hasattr(self, "path"): 
-            path = self.path
-        return path
-
-    def onSave(self):
-        return self.evaluateJavaScript('$(window).onSave()')
-    
-    def saveFile(self, aFile):
-        html = self.getHtml() 
-        #rx = QtCore.QRegExp("<head>([\s\S\r]*)</head>")
-        #html.replace(rx, self.defaultHeader)
-        html = html.toUtf8()
-        c = aFile.write(html)
-        success = c >= html.length()
-        return success
-
-    def getHtml(self):
-        return self.page().mainFrame().toHtml()
-
-
-
-
-
-    
-
-
-
-    
-    def loadFromPath(self, path):
-        template = self.getTemplate(path)
-        if not template:
-            return False
-        self.setHtml(template, QtCore.QUrl.fromLocalFile(path))
-        self.page().setLinkDelegationPolicy(QWebPage.DelegateAllLinks)
-        self.linkClicked[QtCore.QUrl].connect(self.openLink)
-        self.setFocus()
-        self.setPath(path)
-        return True
-    
-    def getTemplate(self, path):
-        if not os.path.exists(path): 
-            return
-        with open(path) as f:
-            template = u''.join(f.readlines())
-            template%self.context
-            return template
-#         f = QtCore.QFile(path)
-#         if not f.open(QtCore.QFile.ReadOnly):
-#             return
-        
-#         template = unicode(f.readAll(), 'utf-8')
-#         template = render_template(template, self.context)
-#         self.insert_header_if_not_exist(template)
-#         return template
-
-    def insert_header_if_not_exist(self, template):
-        #template = re.sub(r'<head>[\w\W]*</head>', self.extendedHeader, data)
-        pass
-    
-        
-    def setPath(self, path):
-        self.path  = path
-    
-    def newDoc(self, path=None):
-        if not path:
-            return
-        src = join(Resources.getSourcesFolderPath(), "sources.html")
-        shutil.copyfile(src, path)
-        self.setPath(path)
-        self.loadFromPath(path)
-        
-    def rename(self, oldPath, newPath):
-        oldPath = unicode(oldPath)
-        newPath = unicode(newPath)
-        self.saveDoc()
-        src = join(self.workFolder, oldPath)
-        dst = join(self.workFolder, newPath)
-        shutil.move(src, dst)
-        os.rename(join(dst, oldPath + ".html"), join(dst, newPath + ".html"))
     
     #####################################################################################################
     #
@@ -271,22 +179,22 @@ class Editor(QWebView):
         if not text: 
             return        
         
-        newImgs = self.download_all_images_from_html(text)
+        newImgs = self.downloadAllImages(text)
         if not newImgs: 
             return
         
-        self.replace_img_src_by_local_src(text, newImgs)
+        self.replaceImageSrc(text, newImgs)
             
         data = QtCore.QMimeData()
         data.setHtml(text)
         clipboard.setMimeData(data)
 
-    def download_all_images_from_html(self, text):
-        dest = self.get_path_to_folder(Editor.IMG_FOLDER)
+    def downloadAllImages(self, text):
+        dest = self.getPathToFolder(Editor.IMG_FOLDER)
         newImgs = copy_img_html(text, dest, self.urlForCopy)
         return newImgs
                 
-    def replace_img_src_by_local_src(self, text, newImgs):
+    def replaceImageSrc(self, text, newImgs):
         # newImgs = [old_src: new_src]
         for img in newImgs:
             if img and newImgs[img]:
@@ -296,12 +204,99 @@ class Editor(QWebView):
     def setUrlForCopy(self):
         self.urlForCopy = self.path
     
+    
+    #---------------------------------------------------------------------------
+    def openDoc(self, path):
+        self.loadFromPath(path)
+    
+    def newDoc(self, path=None):
+        if not path:
+            return
+        src = join(Resources.getSourcesFolderPath(), "sources.html")
+        shutil.copyfile(src, path)
+        self.setPath(path)
+        self.loadFromPath(path)
+    
+    
+    def loadFromPath(self, path):
+        template = self.getTemplate(path)
+        if not template:
+            return False
+        self.setHtml(template, QtCore.QUrl.fromLocalFile(path))
+        self.page().setLinkDelegationPolicy(QWebPage.DelegateAllLinks)
+        self.linkClicked[QtCore.QUrl].connect(self.openLink)
+        self.setFocus()
+        self.setPath(path)
+        return True    
+    
+    def getTemplate(self, path):
+        if not os.path.exists(path): 
+            return
+        with open(path) as f:
+            template = u''.join(f.readlines())
+            template = self.insertHeader(template)
+            return template
 
-    ###################################################################################################
+    def insertHeader(self, template):
+        return re.sub(r'<head>([\s\S\r]*)</head>', self.extendedHeader, template)
+        
+    def setPath(self, path):
+        self.path  = path
+    
+    
+    
+    def saveDoc(self, path=None):
+        path = self.getPath(path)
+        if not path: return
+        
+        success, f = QUtils.openFile(path)
+        if success:        
+            self.onSave()
+            success = self.saveCurrentFile(f)
+        self.setWindowModified(False)
+        return success
+
+    def getPath(self, path=None):
+        if not path and hasattr(self, "path"): 
+            path = self.path
+        return path
+
+    def onSave(self):
+        return self.evaluateJavaScript('$(window).onSave()')
+
+    def saveCurrentFile(self, aFile):
+        html = self.getHtml() 
+        self.deleteExtendedHeader()
+        html = html.toUtf8()
+        c = aFile.write(html)
+        success = c >= html.length()
+        return success
+
+    def getHtml(self):
+        return self.page().mainFrame().toHtml()
+
+    def deleteExtendedHeader(self):
+        #rx = QtCore.QRegExp("<head>([\s\S\r]*)</head>")
+        #html.replace(rx, self.defaultHeader)
+        pass
+        
+    
+    def rename(self, oldPath, newPath):
+        oldPath = unicode(oldPath)
+        newPath = unicode(newPath)
+        self.saveDoc()
+        src = join(self.workFolder, oldPath)
+        dst = join(self.workFolder, newPath)
+        shutil.move(src, dst)
+        os.rename(join(dst, oldPath + ".html"), join(dst, newPath + ".html"))
+    
+    
+
+    ############################################################################
     #
     # Events
     #
-    ###################################################################################################
+    ############################################################################
     def event(self, e):
         if e.type() in (QtCore.QEvent.KeyPress, ):
             if (e.matches(QtGui.QKeySequence.Italic) 
@@ -319,68 +314,14 @@ class Editor(QWebView):
         action = self.editor_actions.get(cmd)
         if not action: return
         if isinstance(action, basestring):
-            self.js_event(action, s_arg)
+            self.jsTrigger(action, s_arg)
         else:
             action()
-    ###################################################################################################
-    #
-    # Utils js
-    #
-    ###################################################################################################
-    
-    def execCommand(self, cmd, arg = None):
-        if arg:
-            jsString = _qstr("document.execCommand(\"%1\", false, \"%2\")").arg(cmd).arg(arg)
-        else:
-            jsString = _qstr("document.execCommand(\"%1\", false, null)").arg(cmd)
-        self.evaluateJavaScript(jsString)
-    
-    def evaluateJavaScript(self, js):
-        frame = self.page().mainFrame()
-        return frame.evaluateJavaScript(js);
-    
-    def insertHtml(self, htmlText):
-        self.execCommand("insertHTML", htmlText)
-    
-    def js_event(self, event, *args):
-        extra_parameters = ''
-        for argument in args:
-            extra_parameters += "'%s',"%argument
-        if extra_parameters:
-            js = "$('body').trigger('%s', [%s])"%(event, extra_parameters)
-        else:
-            js = "$('body').trigger('%s')"%event
-        self.evaluateJavaScript(js)   
-    
-    def js_event_update(self, t, altKey, ctrlKey, shiftKey, which, keyCode):
-        js = "update('%s', %s, %s, %s, %s, %s)"%(t, altKey, ctrlKey, shiftKey, which, keyCode)
-        #print js
-        self.evaluateJavaScript(js)
-    
-    ######################################################################################################################
-    #
-    # Utils
-    #
-    ######################################################################################################################
-                
-    def get_path_to_folder(self, folder_name):
-        if folder_name == Editor.SOURCE_FOLDER:
-            cur_dir = self.workFolder
-        else:
-            cur_dir = os.path.dirname(self.path)   
-        return join(cur_dir, folder_name)
-        
-    
-    
-    def findAllElements(self, selector):
-        return self.page().currentFrame().findAllElements(selector)
-    
-    ######################################################################################################################
-    #
-    # Observe
-    #
-    ######################################################################################################################
+            
+    def on_execute(self, event):
+        self.execute(event.getParam('command'), event.getParam('params'))
 
+    # Observe
     def update(self, event):
         if event.type == ObservableEvent.start:
             self.on_start(event)
@@ -402,24 +343,7 @@ class Editor(QWebView):
             self.saveDoc()
             self.delete_unnecessary()
 
-    def on_execute(self, event):
-        self.execute(event.getParam('command'), event.getParam('params'))
-
-            
-    #==============================================================================================
-    # Start and Stop 
-    #==============================================================================================     
-    
-    def copySourceFilesToWorkfolder(self):
-        """
-        копирует папку _source или только недостающие файлы 
-        в директорию с заметками
-        """
-        src = Resources.getSourcesFolderPath()
-        dest = self.get_path_to_folder(Editor.SOURCE_FOLDER)
-        copy_folder(src, dest, lambda name: True)
         
-
     def delete_unnecessary(self):
         self.delete_unnecessary_img()
         self.delete_unnecessary_files()
@@ -432,5 +356,52 @@ class Editor(QWebView):
 
     def __delete_unnecessary(self, attr, elem, folder):
         necesary = [get_name(e.attribute(attr)) for e in self.findAllElements(elem)]
-        delete_files(self.get_path_to_folder(folder), lambda f:not f in necesary)
+        delete_files(self.getPathToFolder(folder), lambda f:not f in necesary)
+    
+    def findAllElements(self, selector):
+        return self.page().currentFrame().findAllElements(selector)
+    
+    
+    ############################################################################
+    #
+    # JS
+    #
+    ############################################################################
+    
+    def execCommand(self, cmd, arg = None):
+        if arg:
+            jsString = _qstr("document.execCommand(\"%1\", false, \"%2\")").arg(cmd).arg(arg)
+        else:
+            jsString = _qstr("document.execCommand(\"%1\", false, null)").arg(cmd)
+        self.evaluateJavaScript(jsString)
+    
+    def evaluateJavaScript(self, js):
+        frame = self.page().mainFrame()
+        return frame.evaluateJavaScript(js);
+    
+    def insertHtml(self, htmlText):
+        self.execCommand("insertHTML", htmlText)
+    
+    def jsTrigger(self, event, *args):
+        extra_parameters = ''
+        for argument in args:
+            extra_parameters += "'%s',"%argument
+        if extra_parameters:
+            js = "$('body').trigger('%s', [%s])"%(event, extra_parameters)
+        else:
+            js = "$('body').trigger('%s')"%event
+        self.evaluateJavaScript(js)   
+    
+    def jsUpdate(self, t, altKey, ctrlKey, shiftKey, which, keyCode):
+        js = "update('%s', %s, %s, %s, %s, %s)"%(t, altKey, ctrlKey, 
+                                                 shiftKey, which, keyCode)
+        self.evaluateJavaScript(js)
+    
+    #--------------------------------------------------------------------------            
+    def getPathToFolder(self, folderName):
+        if folderName == Editor.SOURCE_FOLDER:
+            curdir = self.workFolder
+        else:
+            curdir = os.path.dirname(self.path)   
+        return join(curdir, folderName)
             
