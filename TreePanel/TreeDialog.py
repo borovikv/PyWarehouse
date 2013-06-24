@@ -39,7 +39,7 @@ class TreeDialog(QtGui.QDialog):
         else:
             self.reject()
     
-    def getText(self):
+    def getTextToFind(self):
         text = self.textField.text().toUtf8()
         #print unicode(text, 'utf-8')
         #return #unicode(self.textField.text(), 'utf-8')

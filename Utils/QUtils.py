@@ -5,6 +5,11 @@ Created on Apr 5, 2013
 '''
 from PyQt4 import QtGui, QtCore
 
+def openFile(path):
+    f = QtCore.QFile(path)
+    success = f.open(QtCore.QFile.WriteOnly | QtCore.QFile.Truncate)
+    return success, f
+    
 def makeButton(name, icon=None, func=None):
     if icon:
         but = QtGui.QPushButton(icon, name)

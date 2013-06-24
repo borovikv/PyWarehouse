@@ -86,9 +86,9 @@ class DOMTreeWidget(QtGui.QTreeView):
         item = self.curent_item
         self.dialog.showDialog("")
         
-        if self.dialog.result() == self.dialog.Accepted and self.dialog.getText() != "":
+        if self.dialog.result() == self.dialog.Accepted and self.dialog.getTextToFind() != "":
             newItem = self.model.addChild(item,
-                                          self.dialog.getText() + '@' + str(self.model.getId()))
+                                          self.dialog.getTextToFind() + '@' + str(self.model.getId()))
             self.model.incrimentId()
             self.scrollToItem(newItem)
             
@@ -117,8 +117,8 @@ class DOMTreeWidget(QtGui.QTreeView):
         
         oldPath = data[0:i]
         self.dialog.showDialog(oldPath)
-        if self.dialog.result() == self.dialog.Accepted and self.dialog.getText() != "":
-            value = self.dialog.getText() + suffix
+        if self.dialog.result() == self.dialog.Accepted and self.dialog.getTextToFind() != "":
+            value = self.dialog.getTextToFind() + suffix
             self.model.renameNodeAttribute(item, value)
             self.actions.renameNode(data, self.item_data(item))
             

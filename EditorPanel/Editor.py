@@ -18,9 +18,8 @@ from Dialogs.InsertDialog import InsertDialog
 from Utils import QUtils
 from Utils.utils import render_template, copy_img_html, delete_files,\
     make_dir_if_not_exist, copy_local_file, copy_file, copy_folder, is_image, get_name
-from Utils.QUtils import openFolder, getGoodUrl
 from PyQt4.QtCore import QString as _qstr
-from Dialogs.Dialog import LineDialog
+from Dialogs.Dialog import LineDialog, FindReplaceDialog
 locale.setlocale(locale.LC_ALL, '')
         
 
@@ -39,40 +38,23 @@ class Editor(QWebView):
     def __init__(self, workFolder, parent = None):
         QWebView.__init__(self, parent)
         self.insertDialog = InsertDialog(self)
-        self.findReplaceDialog = LineDialog(self)
-        self.findReplaceDialog.setButtonListener('find', self.findNext)
-        self.findReplaceDialog.setButtonListener('find all', self.findAll)
+        self.findReplaceDialog = FindReplaceDialog(self)
         self.workFolder = workFolder
         self.urlForCopy = None
         self.path = None
-        
-        self.copy_source_files_to_workfolder()
-        # context for makeHeader and load from path
-        self.context =  { 'imgFolder': Resources.getImageFolderPath(),
-                          'scriptFolderPath': Resources.getScriptsFolder(),
-                          'cssFolderPath': Resources.getStylesFolder(), }
         self.makeHeader()
+        self.copySourceFilesToWorkfolder()
         self.installEventFilter(EditorFilter(self))      
         self.editor_actions = self.getActionMap()
      
     def makeHeader(self):
-        self.defaultHeader = """<head>
-        <meta http-equiv='Content-Type' content='text/html; charset=UTF-8'>
-        <link rel='stylesheet' href='../_source/base.css' type='text/css' media='screen'/>
-        %s
-        </head>
-        """
-        
+        self.context =  { 'imgFolder': Resources.getImageFolderPath(),
+                          'scriptFolderPath': Resources.getScriptsFolder(),
+                          'cssFolderPath': Resources.getStylesFolder(), }
         f = file(Resources.getSource('header.html'))
         header = unicode(f.read())
-        
-        self.extendedHeader = render_template(header, self.context)
+        self.extendedHeader = header%self.context
     
-    #####################################################################################################
-    #
-    # Actions
-    #
-    #####################################################################################################
     
     def getInterfacesElements(self):
         showInButton = QUtils.makeButton("", Resources.getIcon(Resources.iconOpenFolder), self.showInFolder)
@@ -89,7 +71,6 @@ class Editor(QWebView):
                     "row before": 'onInsertRowBefore', 
                     "delete column": 'onDeleteCol', 
                     "delete row": 'onDeleteRow', 
-                    
                     "bold": 'onBold', 
                     "underline": 'onUnderline', 
                     "italic": 'onItalic', 
@@ -98,51 +79,49 @@ class Editor(QWebView):
                     "highlight": 'onHighlight', 
                     "horizontal rule": 'insertHorizontalRule', 
                     "remove format": 'onRemoveFormat', 
-                    
-                    #"insert tag": 'onTag', 
                     "insert task": 'onTask', 
                     "delete task": 'onDeleteTask', 
-                    
                     "insert object": self.onInsert,
-                    
                     "show in folder": self.showInFolder,
                     "find or replace": self.findReplace,
                 }
         return actions
     
-    
             
     def showInFolder(self):
         if self.path:
-            openFolder(self, self.get_path_to_folder(Editor.SELF))
+            QUtils.openFolder(self, self.get_path_to_folder(Editor.SELF))
     
     def findReplace(self):
         self.findReplaceDialog.show()
     
-    def getText(self, text):        
+    def findNext(self):
+        text = self.getTextToFind()
+        self.findText(text)
+    
+    def findAll(self):
+        text = self.getTextToFind()
+        self.findText(text, QWebPage.HighlightAllOccurrences)
+
+    def replaceNext(self):
+        text = self.getTextToFind()
+        newtext = self.getTextToReplace()
+        self.js_event('replace', 'next', text, newtext)
+    
+    def replaceAll(self):
+        newtext=None
+        text = self.getTextToFind()
+        self.js_event('replace', 'all', text, newtext)
+    
+    def getTextToFind(self):     
+        text = self.findReplaceDialog.getLineText(0)   
         if not text:
             text = self.selectedText()
         return text
-    
-    def findNext(self, text=None):
-        print 'slkdjfi'
-        text = self.getText(text)
-        print "text", text
-        self.findText(text)
-    
-    def findAll(self, text=None):
-        text = self.getText(text)
-        self.findText(text, QWebPage.HighlightAllOccurrences)
-    def replaceNext(self, text=None, newtext=None):
-        text = self.getText(text)
-        self.js_event('replace', 'next', text, newtext)
-    def replaceAll(self, text=None, newtext=None):
-        text = self.getText(text)
-        self.js_event('replace', 'all', text, newtext)
-    
-        
-        
 
+    def getTextToReplace(self):
+        return self.findReplaceDialog.getLineText(1)
+        
 
     def onInsert(self):
         self.insertDialog.exec_()
@@ -150,29 +129,28 @@ class Editor(QWebView):
         if not path: return
         
         if is_image(path):
-            self.copy_image_and_insert_into_html(path)
+            f = self.copyImage(path)
+            self.execCommand("insertImage", f)
         elif os.path.isfile(path):    
-            self.copy_file_and_insert_link(path)
+            f = self.copyFile(path)
+            self.insertLinkToFile(f['url'], f['name'])
         else:
             self.execCommand("createLink", path);
              
-    def copy_file_and_insert_link(self, path):
-        f = self.insertFile(path)
+
+    def insertLinkToFile(self, url, text):
         icon = Resources.getSource("File.png")
-        htmlText = "&nbsp;<div class='File'><a href='%s'><img src='%s'>%s</a></div>&nbsp" % (f["url"], icon, f["name"])
+        htmlText = "&nbsp;<div class='File'><a href='%s'><img src='%s'>%s</a></div>&nbsp" % (url, icon, text)
         self.insertHtml(htmlText)
 
+    def copyImage(self, path):
+        return copy_file(path, self.get_path_to_folder(Editor.IMG_FOLDER), None)
 
-    def copy_image_and_insert_into_html(self, path):
-        f = copy_file(path, self.get_path_to_folder(Editor.IMG_FOLDER), None)
-        if f:
-            self.execCommand("insertImage", f)
-
-    def insertFile(self, link):        
+    def copyFile(self, link):        
         link = _qstr(link)
         if link.isEmpty():
             return
-        url = getGoodUrl(link)
+        url = QUtils.getGoodUrl(link)
         if url.isValid():
             dst = self.get_path_to_folder(Editor.FILES_FOLDER)
             make_dir_if_not_exist(dst) 
@@ -184,33 +162,53 @@ class Editor(QWebView):
         QtGui.QDesktopServices.openUrl(url)
         return True
     
-    #####################################################################################################
-    #
-    # File operation
-    #
-    #####################################################################################################    
-
-    
-    def insert_header_if_not_exist(self, template):
-        #template = re.sub(r'<head>[\w\W]*</head>', self.extendedHeader, data)
-        pass
+    #---------------------------------------------------------------------------
+    def openDoc(self, path):
+        self.loadFromPath(path)
     
     
-
-    def get_template_from_path(self, path):
-        if not QtCore.QFile.exists(path): #return False
-            return
-        f = QtCore.QFile(path)
-        if not f.open(QtCore.QFile.ReadOnly):
-            return
+    def saveDoc(self, path=None):
+        path = self.getPath(path)
+        if not path: return
         
-        template = unicode(f.readAll(), 'utf-8')
-        template = render_template(template, self.context)
-        self.insert_header_if_not_exist(template)
-        return template
+        success, f = QUtils.openFile(path)
+        if success:        
+            self.onSave()
+            success = self.saveFile(f)
+        self.setWindowModified(False)
+        return success
 
+    def getPath(self, path=None):
+        if not path and hasattr(self, "path"): 
+            path = self.path
+        return path
+
+    def onSave(self):
+        return self.evaluateJavaScript('$(window).onSave()')
+    
+    def saveFile(self, aFile):
+        html = self.getHtml() 
+        #rx = QtCore.QRegExp("<head>([\s\S\r]*)</head>")
+        #html.replace(rx, self.defaultHeader)
+        html = html.toUtf8()
+        c = aFile.write(html)
+        success = c >= html.length()
+        return success
+
+    def getHtml(self):
+        return self.page().mainFrame().toHtml()
+
+
+
+
+
+    
+
+
+
+    
     def loadFromPath(self, path):
-        template = self.get_template_from_path(path)
+        template = self.getTemplate(path)
         if not template:
             return False
         self.setHtml(template, QtCore.QUrl.fromLocalFile(path))
@@ -218,31 +216,28 @@ class Editor(QWebView):
         self.linkClicked[QtCore.QUrl].connect(self.openLink)
         self.setFocus()
         self.setPath(path)
-        
         return True
     
-    def openDoc(self, path):
-        self.loadFromPath(path)
+    def getTemplate(self, path):
+        if not os.path.exists(path): 
+            return
+        with open(path) as f:
+            template = u''.join(f.readlines())
+            template%self.context
+            return template
+#         f = QtCore.QFile(path)
+#         if not f.open(QtCore.QFile.ReadOnly):
+#             return
+        
+#         template = unicode(f.readAll(), 'utf-8')
+#         template = render_template(template, self.context)
+#         self.insert_header_if_not_exist(template)
+#         return template
+
+    def insert_header_if_not_exist(self, template):
+        #template = re.sub(r'<head>[\w\W]*</head>', self.extendedHeader, data)
+        pass
     
-    def saveDoc(self, path = None, doc=None):
-        if not hasattr(self, "path"):
-            self.newDoc()
-        
-        if not path:
-            path = self.path
-        
-        data =  QtCore.QFile(path)
-        success = data.open(QtCore.QFile.WriteOnly | QtCore.QFile.Truncate)
-        if success:        
-            self.evaluateJavaScript('$(window).unload()')
-            html = doc or self.page().mainFrame().toHtml()
-            #rx = QtCore.QRegExp("<head>([\s\S\r]*)</head>")
-            #html.replace(rx, self.defaultHeader)
-            html = html.toUtf8()
-            c = data.write(html)
-            success = (c >= html.length())
-        self.setWindowModified(False)
-        return success
         
     def setPath(self, path):
         self.path  = path
@@ -415,7 +410,7 @@ class Editor(QWebView):
     # Start and Stop 
     #==============================================================================================     
     
-    def copy_source_files_to_workfolder(self):
+    def copySourceFilesToWorkfolder(self):
         """
         копирует папку _source или только недостающие файлы 
         в директорию с заметками

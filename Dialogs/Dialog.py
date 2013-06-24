@@ -49,7 +49,7 @@ class LineDialog(DialogBox):
     def makeLines(self, lines):
         self.lines = []
         for _ in range(lines):
-            self.lines.append(QtGui.QLineEdit())
+            self.lines.append(QtGui.QLineEdit(str(_)))
 
     def addLinesToLayout(self, layout):
         for line in self.lines:
@@ -65,7 +65,7 @@ class LineDialog(DialogBox):
         return self.buttons.setdefault(name, makeButton(text, func=listener))
 
     def addButtonsToLayout(self, layout, exclude):
-        for name in self.buttons:
+        for name in sorted(self.buttons):
             if exclude and name in exclude:
                 continue
             layout.addWidget(self.buttons[name])
@@ -81,7 +81,16 @@ class LineDialog(DialogBox):
         if position < len(self.lines):
             return self.lines[position].text()
     
-    
+class FindReplaceDialog(LineDialog):
+    def __init__(self, parent):
+        buttons = {
+           'find':('find', parent.findNext),
+           'find_all':('find all', parent.findAll), 
+           'replace': ('replace', parent.replaceNext),
+           'replace_all': ('replace all', parent.replaceAll),
+        }
+        LineDialog.__init__(self, 2, buttons=buttons, parent=parent)  
+          
 if __name__=="__main__":
     import sys
     app = QtGui.QApplication(sys.argv)
