@@ -24,7 +24,8 @@ import re
 import inspect
 locale.setlocale(locale.LC_ALL, '')
         
-
+TEMPLATES = os.path.join(os.path.dirname(__file__), 'templates')
+print TEMPLATES
 class Editor(QWebView):
     FILES_FOLDER = "Files" 
     IMG_FOLDER = "IMG"
@@ -47,7 +48,7 @@ class Editor(QWebView):
         self.context =  { 'imgFolder': Resources.getImageFolderPath(),
                           'scriptFolderPath': Resources.getScriptsFolder(),
                           'cssFolderPath': Resources.getStylesFolder(), }
-        f = file(Resources.getSource('header.html'))
+        f = file(os.path.join(TEMPLATES, 'header.html'))
         header = unicode(f.read())
         self.extendedHeader = header%self.context
     
@@ -234,7 +235,7 @@ class Editor(QWebView):
     def newDoc(self, path=None):
         if not path:
             return
-        src = join(Resources.getSourcesFolderPath(), "sources.html")
+        src = join(TEMPLATES, "sources.html")
         shutil.copyfile(src, path)
         self.setPath(path)
         self.loadFromPath(path)
