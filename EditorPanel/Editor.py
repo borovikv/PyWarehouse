@@ -16,12 +16,13 @@ from Utils.Resources import Resources
 from Utils.Events import ObservableEvent
 from Dialogs.InsertDialog import InsertDialog
 from Utils import QUtils
-from Utils.utils import render_template, copy_img_html, delete_files,\
+from Utils.utils import copy_img_html, delete_files,\
     make_dir_if_not_exist, copy_local_file, copy_file, copy_folder, is_image, get_name
 from PyQt4.QtCore import QString as _qstr
-from Dialogs.Dialog import LineDialog, FindReplaceDialog
-from BeautifulSoup import BeautifulSOAP, BeautifulSoup
+from Dialogs.Dialog import FindReplaceDialog
+from BeautifulSoup import BeautifulSoup
 import re
+import inspect
 locale.setlocale(locale.LC_ALL, '')
         
 
@@ -304,11 +305,11 @@ class Editor(QWebView):
                 or e.matches(QtGui.QKeySequence.Bold)):
                 e.ignore()
                 return True
-        #if e.type() == QWebView.l   
         return QWebView.event(self, e)
     
     def contextMenuEvent(self, *args, **kwargs):
         pass
+    
     
     def  execute(self, cmd, s_arg = None):
         action = self.editor_actions.get(cmd)
@@ -316,8 +317,17 @@ class Editor(QWebView):
         if isinstance(action, basestring):
             self.jsTrigger(action, s_arg)
         else:
-            action()
+            self.callFunc(action, s_arg)
             
+    def callFunc(self, action, s_arg):
+        argSpec = inspect.getargspec(action)
+        
+        if len(argSpec.args)>1 or  argSpec.varargs:
+            action(s_arg)
+        else:
+            action()
+
+    
     def on_execute(self, event):
         self.execute(event.getParam('command'), event.getParam('params'))
 
