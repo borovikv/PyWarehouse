@@ -76,12 +76,14 @@
   // 
   //  (jQuery) The initial jQuery collection of elements.
   
-  $.fn.replaceText = function( search, replace, text_only ) {
-    return this.each(function(){
+  $.fn.replaceText = function( search, replace, text_only, first_only) {
+      if (first_only){
+          var counter = 0;
+      }
+    return this.each(function(index){
       var node = this.firstChild,
         val,
         new_val,
-        
         // Elements to be removed at the end.
         remove = [];
       
@@ -90,7 +92,7 @@
         
         // Loop over all childNodes.
         do {
-          
+          if (first_only && counter >= 1) break;
           // Only process text nodes.
           if ( node.nodeType === 3 ) {
             
@@ -102,7 +104,7 @@
             
             // Only replace text if the new value is actually different!
             if ( new_val !== val ) {
-              
+              counter++;
               if ( !text_only && /</.test( new_val ) ) {
                 // The new value contains HTML, set it in a slower but far more
                 // robust way.
@@ -117,8 +119,7 @@
               }
             }
           }
-          
-        } while ( node = node.nextSibling );
+        } while ( node = node.nextSibling);
       }
       
       // Time to remove those elements!

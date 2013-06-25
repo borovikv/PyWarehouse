@@ -36,6 +36,7 @@ class EditorFilter(QObject):
                         Qt.Key_H:"highlight",
                         Qt.Key_R:"remove format",
                         Qt.Key_Underscore:"horizontal rule",
+                        Qt.Key_F: "find or replace",
                         }
         
     def eventFilter(self, obj, e):

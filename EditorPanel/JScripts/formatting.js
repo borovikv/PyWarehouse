@@ -45,14 +45,15 @@ $(document).ready(function(){
 		execCommand("insertHorizontalRule", false, null)
 	}
 	///!
-	function replace() {
-		replace.count = 0;
-		ONLY_FIRST = true
-		if (ONLY_FIRST){
-			replace.count += 1
-		}
-		alert(replace.count)
-		$("body").replaceText(OLD_TEXT, NEW_TEXT);
+	function replace(event, what, text, newtext) {
+	    switch( what ){
+	        case 'all':
+        	   $("body *").replaceText(new RegExp(text, 'g'), newtext);
+	           break;
+	        case 'first':
+        	   $("body *").replaceText(new RegExp(text), newtext, false, true);
+    	       break;
+	    }
 	}
 	/////////////////////////////////////////////////////////////////////////////////
 	// events

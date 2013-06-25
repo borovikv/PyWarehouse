@@ -20,7 +20,6 @@ from Utils.utils import copy_img_html, delete_files,\
     make_dir_if_not_exist, copy_local_file, copy_file, copy_folder, is_image, get_name
 from PyQt4.QtCore import QString as _qstr
 from Dialogs.Dialog import FindReplaceDialog
-from BeautifulSoup import BeautifulSoup
 import re
 import inspect
 locale.setlocale(locale.LC_ALL, '')
@@ -110,14 +109,16 @@ class Editor(QWebView):
         self.findText(text, QWebPage.HighlightAllOccurrences)
 
     def replaceNext(self):
-        text = self.getTextToFind()
-        newtext = self.getTextToReplace()
-        self.jsTrigger('replace', 'next', text, newtext)
+        self.replace('first')
     
     def replaceAll(self):
-        newtext=None
+        self.replace('all')
+
+    def replace(self, what):
         text = self.getTextToFind()
-        self.jsTrigger('replace', 'all', text, newtext)
+        newtext = self.getTextToReplace()
+        self.jsTrigger('replace', what, text, newtext)
+
     
     def getTextToFind(self):     
         text = self.findReplaceDialog.getLineText(0)   
@@ -179,6 +180,7 @@ class Editor(QWebView):
         text = clipboard.text("html")
         if not text: 
             return        
+        
         
         newImgs = self.downloadAllImages(text)
         if not newImgs: 
@@ -400,6 +402,7 @@ class Editor(QWebView):
             js = "$('body').trigger('%s', [%s])"%(event, extra_parameters)
         else:
             js = "$('body').trigger('%s')"%event
+        print js
         self.evaluateJavaScript(js)   
     
     def jsUpdate(self, t, altKey, ctrlKey, shiftKey, which, keyCode):
