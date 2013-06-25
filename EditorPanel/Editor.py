@@ -69,7 +69,7 @@ class Editor(QWebView):
     
     def getActionMap(self):
         actions = {
-                   "insert table": 'onCreateTable', 
+                   "insert table": self.onCreateTable, 
                     "column after": 'onInsertColAfter', 
                     "column before": 'onInsertColBefore', 
                     "row after": 'onInsertRowAfter', 
@@ -92,7 +92,19 @@ class Editor(QWebView):
                 }
         return actions
     
-            
+    def onCreateTable(self, row_col):
+        if row_col:
+            row_col = [x for x in re.split(r'[^\d]+', row_col) if x.isdigit()]
+            if len(row_col) == 0:
+                row_col = [1, 1]
+            elif len(row_col) == 1:
+                row_col.append(1)
+            else:
+                row_col = row_col[:2]
+        else: 
+            row_col = [1, 1]
+        self.jsTrigger('onCreateTable', *row_col)        
+    
     def showInFolder(self):
         if self.path:
             QUtils.openFolder(self, self.getPathToFolder(Editor.SELF))
@@ -169,11 +181,18 @@ class Editor(QWebView):
         QtGui.QDesktopServices.openUrl(url)
         return True
     
-    #####################################################################################################
+    def onArrow(self, key):
+        self.jsTrigger('onArrow', key)
+        if key == "ARROWUP":
+            self.jsTrigger('onArrow', 'right')
+        elif "ARROWDOWN":
+            self.jsTrigger('onArrow', 'left')
+    
+    ############################################################################
     #
     # Paste IMG 
     #
-    #####################################################################################################  
+    ############################################################################  
     def pastePreparation(self):
         clipboard = QtGui.QApplication.clipboard() 
         
@@ -402,7 +421,6 @@ class Editor(QWebView):
             js = "$('body').trigger('%s', [%s])"%(event, extra_parameters)
         else:
             js = "$('body').trigger('%s')"%event
-        print js
         self.evaluateJavaScript(js)   
     
     def jsUpdate(self, t, altKey, ctrlKey, shiftKey, which, keyCode):

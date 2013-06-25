@@ -9,6 +9,7 @@ from PyQt4.QtCore import Qt, QEvent, QObject
 class EditorFilter(QObject):
     def __init__(self, parent=None):
         QObject.__init__(self, parent)
+        
         self.keyCodes = { Qt.Key_Left: "ARROWLEFT", 
                           Qt.Key_Right: "ARROWRIGHT", 
                           Qt.Key_Up: "ARROWUP", 
@@ -39,18 +40,53 @@ class EditorFilter(QObject):
                         Qt.Key_F: "find or replace",
                         }
         
-    def eventFilter(self, obj, e):
-        if e.type() == QEvent.KeyPress  and e.modifiers()& Qt.ControlModifier and e.key() in self.actions:
-            action = self.actions.get(e.key())
-            obj.execute(action)
-            if e.key() not in self.keyCodes:
-                return True
-            return QObject.eventFilter(self, obj, e)
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.KeyPress:
+            return self.keyPressed(obj, event)
+        return QObject.eventFilter(self, obj, event)
+
+    def keyPressed(self, obj, event):
+        if self.isCtrlActionEvent(event):
+            return self.execute(obj, event)
         
-        if e.type() == QEvent.KeyPress:
-            if e.matches(QtGui.QKeySequence.Paste):
-                obj.pastePreparation()
-            elif e.matches(QtGui.QKeySequence.Copy) or e.matches(QtGui.QKeySequence.Cut):
-                obj.setUrlForCopy()
-               
-        return QObject.eventFilter(self, obj, e)
+        if self.isPasteEvent(event):
+            obj.pastePreparation()
+        
+        elif self.isCopyEvent(event):
+            obj.setUrlForCopy()
+        
+        elif self.isArrowEvent(event):
+            key = self.keyCodes[event.key()]
+            obj.onArrow(key)
+        return QObject.eventFilter(self, obj, event)
+
+    
+    def isCtrlActionEvent(self, event):
+        return self.ctrlPressed(event) and event.key() in self.actions
+
+    def isCopyEvent(self, event):
+        return event.matches(QtGui.QKeySequence.Copy) or event.matches(QtGui.QKeySequence.Cut)
+
+
+    def isPasteEvent(self, event):
+        return event.matches(QtGui.QKeySequence.Paste)
+    
+    def isArrowEvent(self, event):
+        key = self.keyCodes.get(event.key()) 
+        return key and key in ("ARROWUP", "ARROWDOWN")
+
+    def execute(self, obj, event):
+        action = self.actions[event.key()]
+        obj.execute(action)
+        if event.key() not in self.keyCodes:
+            return True
+        return QObject.eventFilter(self, obj, event)
+
+
+    def ctrlPressed(self, event):
+        return event.modifiers() & Qt.ControlModifier
+
+
+
+
+

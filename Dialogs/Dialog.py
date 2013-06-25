@@ -4,7 +4,6 @@ Created on 07.07.2012
 @author: vb
 '''
 from PyQt4 import QtCore, QtGui
-from Utils.Strings import getTranslate
 from Utils.QUtils import makeButton
 
 class DialogBox(QtGui.QWidget):
@@ -12,7 +11,10 @@ class DialogBox(QtGui.QWidget):
         QtGui.QWidget.__init__(self, parent)
         self.color = color
         self.resize(width, height)
-        self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.FramelessWindowHint)
+        self.setWindowFlags(QtCore.Qt.Window | 
+                            QtCore.Qt.FramelessWindowHint | 
+                            QtCore.Qt.CustomizeWindowHint | 
+                            QtCore.Qt.Dialog)
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
         self.setWindowOpacity(0.95)
         desktop = QtGui.QApplication.desktop()

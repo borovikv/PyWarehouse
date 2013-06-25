@@ -33,7 +33,7 @@ function getElement(el, fromStart){
 	while (isElementNotCurrentTagName(parent, el.toUpperCase())){
 		parent = parent.parentNode;
 	}
-	if (parent.tagName != el) return null;
+	if (parent.tagName != el.toUpperCase()) return null;
 	
 	return parent;
 }
@@ -70,6 +70,12 @@ function insertNodeAtCaret(node) {
     
     sel.removeAllRanges();
     sel.addRange(range);
+}
+
+function insertNodeAtCaret2(){
+    var selection = getCurrentSelection();
+    if (selection)
+        selection.getRangeAt(0).insertNode($table.get(0))
 }
 
 function execCommand(command, arg1, arg2){
