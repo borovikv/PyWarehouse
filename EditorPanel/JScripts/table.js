@@ -57,23 +57,23 @@ $(document).ready(function(){
 				return false;
 			 });
 	
-	$("body").keydown(function(event){
-		if (!test("table")) return;
-		if(testKey("arrowUp", event)){
-		// arrow up
-			var elem = getElement("td").parentNode.previousSibling;
-			if (elem)
-				selectElement(elem.childNodes[getTablePos()["col"]])	
-			return false;		
-		} else if(testKey("arrowDown", event)){
-		// arraw down
-			var elem = getElement("td").parentNode.nextSibling;
-			if (elem)
-				selectElement(elem.childNodes[getTablePos()["col"]])	
-			return false;
-		}
-	});
 	
+	function tableArrow(event, what){
+		if (!getElement("table")) return;
+		if( what == 'up' ){
+		    selectCell(true)
+		} else if( what == 'down' ){
+		    selectCell(false)			
+		}
+	}
+	
+	function selectCell( previous ){
+	    var parent = getElement("td").parentNode;
+		var elem = previous ? parent.previousSibling : parent.nextSibling;
+        if (elem)
+            selectElement(elem.childNodes[getTableCol()])    
+        return false;
+	}
 	
 	///////////////////////////////////////////////////////////////////////////////
 	// interface creation
@@ -163,8 +163,8 @@ $(document).ready(function(){
 		return $table;
 	}
 	
-	function insertCol(pos, where){
-		$($curentTable).find("tr").each(function(){
+	function insertCol(table, pos, where){
+		$(table).find("tr").each(function(){
 			var $col = $(this).children("td").eq(pos);
 			if (where == "before")
 				$($col).before($("<td>"));
@@ -173,8 +173,8 @@ $(document).ready(function(){
 		});
 	}
 	
-	function insertRow(pos, where){
-		var $row = $($curentTable).find("tr").eq(pos);
+	function insertRow(table, pos, where){
+		var $row = $(table).find("tr").eq(pos);
 		var $newRow = $($row).clone().children("td").empty().end();
 		
 		if (where == "before")
@@ -183,42 +183,51 @@ $(document).ready(function(){
 			$($newRow).insertAfter($row);		  
 	}
 	
-	function del(pos, what){
+	function del(table, pos, what){
 		//alert($($curentTable).find("tr").contents().filter("td:nth-child(" + pos +")").size())
 		
 		if(what == "col"){
 			//$($curentTable).find("tr").contents().filter("td:nth-child(" + pos +")").remove()
-			$($curentTable).find("tr").each(function(){
+			$(table).find("tr").each(function(){
 				
 				$(this).children("td").eq(pos).remove();
 				if ($(this).children("td").size() == 0) 
 					$(this).remove();
 			});
 		} else if (what = "row")
-			$($curentTable).find("tr").eq(pos).remove();
+			$(table).find("tr").eq(pos).remove();
 		
-		if ($($curentTable).find("tr").size() == 0) {
-			$($curentTable).remove();
+		if ($(table).find("tr").size() == 0) {
+			$(table).remove();
 		}
 	}
 	
 	function tableOperation (operation, what, where) {
+		var table = getElement("table");
+		if(!table || $(table).is(".TaskGroup")) return;
 		
-		if(!test("table") || $(getElement("table")).is(".TaskGroup")) return;
-		
-		$curentTable = $(getElement("table"));
-		var pos = getTablePos()
 		if (operation == "insert"){
-			if (what == "row") {
-				insertRow(pos[what], where)
-			} else if (what == "col"){
-				insertCol(pos[what], where);
-			};	
+		    tableInsert(table, what, where);
 		} else if (operation == "delete"){
-			del(pos[what], what);
+			tableOperation
 		}
 	}
 	
+	function tableInsert(table, what, where){
+		if (what == "row") {
+			insertRow(getTableRow(), where)
+		} else if (what == "col"){
+			insertCol(getTableCol(), where);
+		};	
+	}
+	
+	function tableDelete(what){
+	    if (what == "row") {
+	        del(getTableRow(), what);
+	    } else if (what == 'col'){
+	        del(getTableCol(), what);
+	    }
+	}
 });
 
 
