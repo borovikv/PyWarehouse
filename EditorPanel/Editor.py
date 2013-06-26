@@ -22,10 +22,11 @@ from PyQt4.QtCore import QString as _qstr
 from Dialogs.Dialog import FindReplaceDialog
 import re
 import inspect
+import codecs
 locale.setlocale(locale.LC_ALL, '')
         
-TEMPLATES = os.path.join(os.path.dirname(__file__), 'templates')
-print TEMPLATES
+TEMPLATES = join(os.path.dirname(__file__), 'templates')
+
 class Editor(QWebView):
     FILES_FOLDER = "Files" 
     IMG_FOLDER = "IMG"
@@ -255,7 +256,7 @@ class Editor(QWebView):
     def getTemplate(self, path):
         if not os.path.exists(path): 
             return
-        with open(path) as f:
+        with codecs.open(path, 'r', 'utf-8') as f:
             template = u''.join(f.readlines())
             template = self.insertHeader(template)
             return template
