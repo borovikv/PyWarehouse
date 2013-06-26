@@ -33,11 +33,12 @@ def get_name(path):
         path = unicode(path, 'utf-8')
     return os.path.split(path)[1]
        
-def copy_folder(src, dest, fltr):
+def copy_folder(src, dest, pred=lambda name: True):
+    print src, dest, pred
     def func(arg, dirname, names):
         for name in names:
             path = os.path.join(dest, name)
-            if not os.path.exists(path) and fltr(name):
+            if not os.path.exists(path) and pred(name):
                 src = os.path.join(dirname, name)
                 shutil.copy(src, path)
                 

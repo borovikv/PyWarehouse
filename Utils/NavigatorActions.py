@@ -9,11 +9,11 @@ import shutil
 
 class NavigatorActions:
 
-    def __init__(self, editor, workFolder):
+    def __init__(self, editor, notesFolder):
         '''
         Constructor
         '''
-        self.workFolder = workFolder
+        self.notesFolder = notesFolder
         self.editorPanel = editor
         actions = {}
         actions["addChild"] = self.addChild
@@ -43,7 +43,7 @@ class NavigatorActions:
         self.lastOpen = path
         
     def deleteNode(self, item):
-        shutil.rmtree(os.path.join(self.workFolder, unicode(item)))
+        shutil.rmtree(os.path.join(self.notesFolder, unicode(item)))
         self.editorPanel.newDoc()
         
     
@@ -54,6 +54,6 @@ class NavigatorActions:
     #####################################################################################################
     def getFoolPath(self, path):
         path = unicode(path)
-        return os.path.join(self.workFolder, path, path + ".html")
+        return os.path.join(self.notesFolder, path, path + ".html")
     
         

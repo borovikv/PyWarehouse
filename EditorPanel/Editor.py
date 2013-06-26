@@ -24,20 +24,21 @@ import re
 import inspect
 import codecs
 locale.setlocale(locale.LC_ALL, '')
-        
-TEMPLATES = join(os.path.dirname(__file__), 'templates')
+
+EDITOR_FOLDER = os.path.dirname(__file__)        
+TEMPLATES = join(EDITOR_FOLDER, 'templates')
+SOURCE_FOLDER  = join(EDITOR_FOLDER, '_source')
 
 class Editor(QWebView):
     FILES_FOLDER = "Files" 
     IMG_FOLDER = "IMG"
-    SOURCE_FOLDER = "_source"
     SELF = ""
     
-    def __init__(self, workFolder, parent = None):
+    def __init__(self, notesFolder, parent = None):
         QWebView.__init__(self, parent)
         self.insertDialog = InsertDialog(self)
         self.findReplaceDialog = FindReplaceDialog(self)
-        self.workFolder = workFolder
+        self.notesFolder = notesFolder
         self.urlForCopy = None
         self.path = None
         self.makeHeader()
@@ -49,7 +50,7 @@ class Editor(QWebView):
         self.context =  { 'imgFolder': Resources.getImageFolderPath(),
                           'scriptFolderPath': Resources.getScriptsFolder(),
                           'cssFolderPath': Resources.getStylesFolder(), }
-        f = file(os.path.join(TEMPLATES, 'header.html'))
+        f = file(join(TEMPLATES, 'header.html'))
         header = unicode(f.read())
         self.extendedHeader = header%self.context
     
@@ -58,9 +59,8 @@ class Editor(QWebView):
         копирует папку _source или только недостающие файлы 
         в директорию с заметками
         """
-        src = Resources.getSourcesFolderPath()
-        dest = self.getPathToFolder(Editor.SOURCE_FOLDER)
-        copy_folder(src, dest, lambda name: True)
+        dest = join(self.notesFolder, os.path.basename(SOURCE_FOLDER))
+        copy_folder(SOURCE_FOLDER, dest)
     
     
     def getInterfacesElements(self):
@@ -309,8 +309,8 @@ class Editor(QWebView):
         oldPath = unicode(oldPath)
         newPath = unicode(newPath)
         self.saveDoc()
-        src = join(self.workFolder, oldPath)
-        dst = join(self.workFolder, newPath)
+        src = join(self.notesFolder, oldPath)
+        dst = join(self.notesFolder, newPath)
         shutil.move(src, dst)
         os.rename(join(dst, oldPath + ".html"), join(dst, newPath + ".html"))
     
@@ -432,9 +432,6 @@ class Editor(QWebView):
     
     #--------------------------------------------------------------------------            
     def getPathToFolder(self, folderName):
-        if folderName == Editor.SOURCE_FOLDER:
-            curdir = self.workFolder
-        else:
-            curdir = os.path.dirname(self.path)   
+        curdir = os.path.dirname(self.path)   
         return join(curdir, folderName)
             
