@@ -38,11 +38,19 @@ class EditorFilter(QObject):
                         }
         
     def eventFilter(self, obj, event):
+        if event.type() == QEvent.ContextMenu:
+            return True
         if event.type() == QEvent.KeyPress:
             return self.keyPressed(obj, event)
         return QObject.eventFilter(self, obj, event)
 
     def keyPressed(self, obj, event):
+        if (event.matches(QtGui.QKeySequence.Italic) 
+            or event.matches(QtGui.QKeySequence.Underline) 
+            or event.matches(QtGui.QKeySequence.Bold)):
+            self.execute(obj, event)
+            return True
+        
         if self.isShortCutEvent(event):
             return self.execute(obj, event)
         
@@ -56,8 +64,7 @@ class EditorFilter(QObject):
             return self.execute(obj, 'onOutdent')
         elif event.key()  == Qt.Key_Tab:
             return self.execute(obj, 'onIndent')
-        elif event.key() in ( Qt.Key_Enter, Qt.Key_Return, ):
-            print 'ent'
+        elif not self.shiftPressed(event) and event.key() in ( Qt.Key_Enter, Qt.Key_Return, ):
             return self.execute(obj, 'onEnter')
         elif not ( event.key() in ( Qt.Key_Left, Qt.Key_Right, ) ): 
             return self.execute(obj, 'onKeyPress')

@@ -30,9 +30,7 @@ class NavigatorActions:
         
         if hasattr(self.editorPanel, 'path') and self.editorPanel.path:
             self.editorPanel.saveDoc()
-        self.editorPanel.newDoc(path)
-        #self.editorPanel.saveDoc(path)
-        #self.editorPanel.setPath(path)
+        self.editorPanel.openDoc(path)
         
     def renameNode(self, oldPath, newPath):
         self.editorPanel.rename(oldPath, newPath)
@@ -43,8 +41,8 @@ class NavigatorActions:
         self.lastOpen = path
         
     def deleteNode(self, item):
-        shutil.rmtree(os.path.join(self.notesFolder, unicode(item)))
-        self.editorPanel.newDoc()
+        self.editorPanel.deleteDoc(unicode(item))
+        #self.editorPanel.openDoc()
         
     
     #####################################################################################################

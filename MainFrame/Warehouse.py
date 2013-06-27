@@ -115,7 +115,6 @@ class Warehouse(QtGui.QWidget, Observable):
             return
         
         self.editorPanel.saveDoc()
-        self.editorPanel.newDoc()
         actions = NavigatorActions(self.editorPanel, self.preferences.getNotesFolder())
         self.treePanel.updateModel(self.preferences.xmlPath, actions)
         
