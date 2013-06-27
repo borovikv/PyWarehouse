@@ -1,4 +1,5 @@
 eclipse.preferences.version=1
+encoding//Dialogs/PreferencesDialog.py=utf-8
 encoding//EditorPanel/Editor.py=utf-8
 encoding//TreePanel/DOMTreeWidget.py=utf-8
 encoding//Utils/Keeper.py=utf-8
