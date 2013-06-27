@@ -92,6 +92,12 @@ class FindReplaceDialog(LineDialog):
            'replace_all': ('replace all', parent.replaceAll),
         }
         LineDialog.__init__(self, 2, buttons=buttons, parent=parent)  
+    
+    def textToFind(self):
+        return self.getLineText(0)
+    
+    def textToReplace(self):
+        self.getLineText(1)
           
 if __name__=="__main__":
     import sys

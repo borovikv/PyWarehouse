@@ -34,7 +34,6 @@ def get_name(path):
     return os.path.split(path)[1]
        
 def copy_folder(src, dest, pred=lambda name: True):
-    print src, dest, pred
     def func(arg, dirname, names):
         for name in names:
             path = os.path.join(dest, name)

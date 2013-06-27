@@ -23,8 +23,7 @@ $(document).ready(function(){
 			 .bind("onDeleteCol", function(){
 			 	tableOperation("delete", "col");
 				return false;
-			 })
-			 .bind('onArrow', onArrow);
+			 });
 	
 	function createTable(event, row, col){
 		var $table = $("<table>");
@@ -85,7 +84,6 @@ $(document).ready(function(){
 	}
 	
 	function deleteCol(table, pos){
-	    alert(pos)
 		$(table).find("tr").each(function(){
 			$(this).children("td").eq(pos).remove();
 			if ($(this).children("td").size() == 0) 
@@ -104,23 +102,12 @@ $(document).ready(function(){
 			$(table).remove();
 		}	    
 	}
-	
-	function onArrow(event, key){
-        if (!getElement("table")) return;
-        if( key == 'ARROWUP' ){
-            return selectCell(true)
-        } else if( key == 'ARROWDOWN' ){
-            return selectCell(false)           
-        } else if (key == 'left'){
-            selectCol(true);
-        } else if (key == 'right'){
-            selectCol(false);
-        }
-    }
-    
+});
+
+$.fn.onArrow = function(key){
     function selectCell( previous ){
         var curcell = getElement("td");
-        if (!curcell) return;
+        if (!curcell) return true;
         var $currow = $(curcell).parents('tr');
         var $row = previous ? $currow.prev('tr') : $currow.next('tr');
         var col = getTableCol();
@@ -128,15 +115,11 @@ $(document).ready(function(){
         selectElement(td)   
         return false;
     }
-    
-    function selectCol(previous){
-        var curcell = getElement("td");
-        if (!curcell) return;
-        var $nextcell = previous ? $(curcell).prev('td') : $(curcell).next('td');
-        var td = $nextcell.get(0);
-        selectElement(td)   
-        return false;
-    }
-});
-
-
+    if (!getElement("table")) return true;
+        if( key == 'ARROWUP' ){
+            return selectCell(true)
+        } else if( key == 'ARROWDOWN' ){
+            return selectCell(false)           
+        } 
+        return true;
+}

@@ -9,73 +9,33 @@ table{
 	border-spacing: 0;
 	width: 100%;
 }
-div#hColBar{
-	background-color: #AAA;
-	height: 20px;
-	position: absolute;
-	float: none;
-	display: none;
-}
-div#vRowBar{
-	background-color: #AAA;
-	width: 20px;
-	position: absolute;
-	float: none;
-	display: none;
-}
 td{
 	border: 1px solid black;
 	padding: 5px;
 	margin: 0;
-	
 	height: 1em;
 }
-.Item{
-	margin: 1px;
-	border: 1px solid black;
-}
-.cl{
-	background: red;
-	
-}
+
 
 .Task{
+	list-style: none;
 	border-bottom: 2px solid #888;
 }
-
 .TaskDone{
 	color: #888;
 	text-decoration: line-through;
 }
-
-.TaskText{
-	width: 90%;
+.CheckBox{
+	display: block;
+	position: relative;
+	left: -1.5em;
+	top: 1em;
+	width: 16px;
+	height: 16px;
 }
-
-.TaskTag{}
-.TaskTime{}
-table.TaskGroup td{
-	border: 0;
-	border-bottom:  2px solid #888;
-	padding: 5px;
-	
+.CheckBox.Unchecked{
+	background: url('../_source/unchecked.png');
 }
-
-.TaskGroup{
-		
-	width: 100%;
+.CheckBox.Checked{
+	background: url('../_source/checked.png');
 }
-
-td.CheckBox{
-	width: 10px;
-	border: 0px;
-}
-
-.Tag{
-	color: red;
-}
-.TagText{
-	background: yellow;
-	font-weight: bold;
-}
-

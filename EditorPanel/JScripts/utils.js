@@ -24,16 +24,21 @@ function countElem(elem, tagName, parentTagName){
     return i;
 }
 
+function getCurrentElement(fromStart){
+    var currentSelection = getCurrentSelection();
+    if(!currentSelection) return null;
+    
+	fromStart = (fromStart == false) ? false : true;
+    var range = currentSelection.getRangeAt(0);
+    return fromStart ? range.startContainer : range.endContainer;
+}
+
 function getElement(el, fromStart){
-	fromStart = (fromStart == undefined || fromStart == null) ? true : false;
-	var parent;
-	parent = fromStart  ? getCurrentSelection().getRangeAt(0).startContainer 
-				        : getCurrentSelection().getRangeAt(0).endContainer;
-	
+	var parent = getCurrentElement(fromStart)
 	while (isElementNotCurrentTagName(parent, el.toUpperCase())){
 		parent = parent.parentNode;
 	}
-	if (parent.tagName != el.toUpperCase()) return null;
+	if (!parent || parent.tagName != el.toUpperCase()) return null;
 	
 	return parent;
 }

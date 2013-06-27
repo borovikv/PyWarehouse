@@ -5,7 +5,7 @@ Created on 21.02.2012
 @author: vb
 '''
 
-from PyQt4 import QtCore, QtGui
+from PyQt4 import QtCore, QtGui, QtWebKit
 from PyQt4.QtWebKit import QWebPage, QWebView
 import os
 from os.path import join
@@ -44,7 +44,7 @@ class Editor(QWebView):
         self.makeHeader()
         self.copySourceFilesToWorkfolder()
         self.installEventFilter(EditorFilter(self))      
-        self.editor_actions = self.getActionMap()
+        self.createActions()
      
     def makeHeader(self):
         self.context =  { 'imgFolder': Resources.getImageFolderPath(),
@@ -69,32 +69,45 @@ class Editor(QWebView):
         interfaceElements["showInButton"] = showInButton
         return interfaceElements
     
-    def getActionMap(self):
-        actions = {
-                   "insert table": self.onCreateTable, 
-                    "column after": 'onInsertColAfter', 
-                    "column before": 'onInsertColBefore', 
-                    "row after": 'onInsertRowAfter', 
-                    "row before": 'onInsertRowBefore', 
-                    "delete column": 'onDeleteCol', 
-                    "delete row": 'onDeleteRow', 
-                    "bold": 'onBold', 
-                    "underline": 'onUnderline', 
-                    "italic": 'onItalic', 
-                    "orderer list": 'onOList', 
-                    "unorderer list": 'onUList', 
-                    "highlight": 'onHighlight', 
-                    "horizontal rule": 'insertHorizontalRule', 
-                    "remove format": 'onRemoveFormat', 
-                    "insert task": 'onTask', 
-                    "delete task": 'onDeleteTask', 
-                    "insert object": self.onInsert,
-                    "show in folder": self.showInFolder,
-                    "find or replace": self.findReplace,
-                }
-        return actions
-    
+    def createActions(self):
+        self.events = {
+           'onArrow': self.onArrow,
+           'onEnter': lambda: self.callJS('onEnter'),
+           'onOutdent': lambda: self.triggerPageAction(QtWebKit.QWebPage.Outdent),
+           'onIndent': lambda: self.triggerPageAction(QtWebKit.QWebPage.Indent),
+           'onPaste': self.pastePreparation,
+           'onCopy': self.setUrlForCopy,
+           'onKeyPress': lambda: self.callJS('onKeyPressed'),
+        }
+        self.editor_actions = {
+            "column after": 'onInsertColAfter', 
+            "column before": 'onInsertColBefore', 
+            "row after": 'onInsertRowAfter', 
+            "row before": 'onInsertRowBefore', 
+            "delete column": 'onDeleteCol', 
+            "delete row": 'onDeleteRow', 
+            "bold": 'onBold', 
+            "underline": 'onUnderline', 
+            "italic": 'onItalic', 
+            "orderer list": 'onOList', 
+            "unorderer list": 'onUList', 
+            "highlight": 'onHighlight', 
+            "horizontal rule": 'insertHorizontalRule', 
+            "remove format": 'onRemoveFormat', 
+            "insert task": 'onTask', 
+            "delete task": 'onDeleteTask', 
+            "insert table": self.onCreateTable, 
+            "show in folder": self.showInFolder,
+            "find or replace": self.findReplace,
+            "insert object": self.onInsert,
+        }    
+
+
     def onCreateTable(self, row_col):
+        row_col = self.getRowCol(row_col)
+        self.jsTrigger('onCreateTable', *row_col)        
+
+    def getRowCol(self, row_col):
         if row_col:
             row_col = [x for x in re.split(r'[^\d]+', row_col) if x.isdigit()]
             if len(row_col) == 0:
@@ -103,9 +116,9 @@ class Editor(QWebView):
                 row_col.append(1)
             else:
                 row_col = row_col[:2]
-        else: 
+        else:
             row_col = [1, 1]
-        self.jsTrigger('onCreateTable', *row_col)        
+        return row_col
     
     def showInFolder(self):
         if self.path:
@@ -130,19 +143,16 @@ class Editor(QWebView):
 
     def replace(self, what):
         text = self.getTextToFind()
-        newtext = self.getTextToReplace()
+        newtext = self.findReplaceDialog.textToReplace()  
         self.jsTrigger('replace', what, text, newtext)
 
     
     def getTextToFind(self):     
-        text = self.findReplaceDialog.getLineText(0)   
+        text = self.findReplaceDialog.textToFind()  
         if not text:
             text = self.selectedText()
         return text
-
-    def getTextToReplace(self):
-        return self.findReplaceDialog.getLineText(1)
-        
+      
 
     def onInsert(self):
         self.insertDialog.exec_()
@@ -184,11 +194,8 @@ class Editor(QWebView):
         return True
     
     def onArrow(self, key):
-        self.jsTrigger('onArrow', key)
-        if key == "ARROWUP":
-            self.jsTrigger('onArrow', 'right')
-        elif "ARROWDOWN":
-            self.jsTrigger('onArrow', 'left')
+        return self.evaluateJavaScript('$("body").onArrow("%s")'%key).toString() == 'false'
+        
     
     ############################################################################
     #
@@ -334,21 +341,23 @@ class Editor(QWebView):
         pass
     
     
-    def  execute(self, cmd, s_arg = None):
-        action = self.editor_actions.get(cmd)
-        if not action: return
+    def  execute(self, cmd, *args):
+        action = self.editor_actions.get(cmd) or self.events.get(cmd)
+        if not action: 
+            return False 
         if isinstance(action, basestring):
-            self.jsTrigger(action, s_arg)
+            self.jsTrigger(action, *args)
         else:
-            self.callFunc(action, s_arg)
+            return  self.callFunc(action, *args) or False
+        return False
             
-    def callFunc(self, action, s_arg):
+    def callFunc(self, action, *args):
         argSpec = inspect.getargspec(action)
         
         if len(argSpec.args)>1 or  argSpec.varargs:
-            action(s_arg)
+            return action(*args[:len(argSpec.args)])
         else:
-            action()
+            return action()
 
     
     def on_execute(self, event):
@@ -407,23 +416,25 @@ class Editor(QWebView):
         else:
             jsString = _qstr("document.execCommand(\"%1\", false, null)").arg(cmd)
         self.evaluateJavaScript(jsString)
+
+    def insertHtml(self, htmlText):
+        self.execCommand("insertHTML", htmlText)
     
     def evaluateJavaScript(self, js):
         frame = self.page().mainFrame()
         return frame.evaluateJavaScript(js);
     
-    def insertHtml(self, htmlText):
-        self.execCommand("insertHTML", htmlText)
+    def callJS(self, func):
+        js =  '$("body").%s()'%func
+        return self.evaluateJavaScript(js).toString() == 'false'
     
     def jsTrigger(self, event, *args):
-        extra_parameters = ''
-        for argument in args:
-            extra_parameters += "'%s',"%argument
+        extra_parameters = ','.join(['"%s"'%re.sub('\W+', ' ', unicode(a), flags=re.U) for a in args if a])
         if extra_parameters:
             js = "$('body').trigger('%s', [%s])"%(event, extra_parameters)
         else:
             js = "$('body').trigger('%s')"%event
-        self.evaluateJavaScript(js)   
+        self.evaluateJavaScript(js)
     
     def jsUpdate(self, t, altKey, ctrlKey, shiftKey, which, keyCode):
         js = "update('%s', %s, %s, %s, %s, %s)"%(t, altKey, ctrlKey, 
