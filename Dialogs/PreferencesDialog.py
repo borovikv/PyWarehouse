@@ -73,7 +73,7 @@ class PreferencesDialog(QtGui.QDialog):
             self.hide()
             
     def show_prep(self):
-        self.xmlPath = self.preferences.getXmlPath()
+        self.xmlPath = self.preferences.xmlPath
         self.xmlPathEdit.setText(self.xmlPath)
         
     
