@@ -66,7 +66,7 @@ class DOMTreeWidget(QtGui.QTreeView):
     # CLICK
     def itemClick(self):
         self.item = self.currentItem
-        name = self.itemData(self.currentItem)
+        name = self.itemDataString(self.currentItem)
         self.callAction('open', name)
        
     # ADDCHILd
@@ -74,7 +74,7 @@ class DOMTreeWidget(QtGui.QTreeView):
         self.dialog.showDialog("")
         if self.dialog.hasResult():
             newItem = self.createNode(self.currentItem)
-            self.callAction('add', self.itemData(newItem))
+            self.callAction('add', self.itemDataString(newItem))
 
     def createNode(self, item):
         newItem = self.model.addChild(item, self.createName())
@@ -89,7 +89,7 @@ class DOMTreeWidget(QtGui.QTreeView):
     def deleteNode(self):
         if self.currentItem == self.model.root:
             return
-        self.callAction('delete', self.itemData(self.currentItem))
+        self.callAction('delete', self.itemDataString(self.currentItem))
         self.model.deleteNode(self.currentItem)
 
     # RENAME
@@ -104,7 +104,7 @@ class DOMTreeWidget(QtGui.QTreeView):
             self.callAction('rename', data, newName)
 
     def splitName(self, item):
-        data = unicode(self.itemData(item))
+        data = unicode(self.itemDataString(item))
         i = data.rfind('@')
         if i >= 0:
             suffix = data[i:]
@@ -133,7 +133,7 @@ class DOMTreeWidget(QtGui.QTreeView):
     
     def getCurrentState(self):
         try:
-            state = self.itemData(self.currentItem)
+            state = self.itemDataString(self.currentItem)
         except:
             state = ""
         return state
@@ -152,5 +152,5 @@ class DOMTreeWidget(QtGui.QTreeView):
         first = self.model.root.child(0)
         return first
     
-    def itemData(self, item):
+    def itemDataString(self, item):
         return item.data().toString() 

@@ -50,7 +50,7 @@ class TreeModel(QStandardItemModel):
     def move(self, item):
         parentItem = self.getParent(item)
         refChild = self.getRefChild(item, parentItem)
-        _ = self.itemData
+        _ = self.itemDataString
         self.xml.move(_(parentItem), _(item), _(refChild))
 
     
@@ -72,7 +72,7 @@ class TreeModel(QStandardItemModel):
 
         
     def addChild(self, parent, attrValue):
-        self.xml.createElement(self.itemData(parent), attrValue)
+        self.xml.createElement(self.itemDataString(parent), attrValue)
         item = self.createItem(attrValue)
         parent.appendRow(item)    
         return item   
@@ -80,14 +80,14 @@ class TreeModel(QStandardItemModel):
     def deleteNode(self, item):  
         if item == self.root:
             return
-        self.xml.deleteElement(self.itemData(item))
+        self.xml.deleteElement(self.itemDataString(item))
         parent = self.getParent(item)
         parent.removeRow(item.index().row())
             
     def renameNode(self, item, newAttrValue):
         if item == self.root:
             return
-        self.xml.renameElement(self.itemData(item), newAttrValue)
+        self.xml.renameElement(self.itemDataString(item), newAttrValue)
         item.setData(newAttrValue) 
         item.setText(self.getName(newAttrValue))
     
@@ -100,7 +100,7 @@ class TreeModel(QStandardItemModel):
     def search(self, name, parent):
         for j in range(parent.rowCount()):
             child = parent.child(j)
-            if self.itemData(child) == name:
+            if self.itemDataString(child) == name:
                 return child
         return self.getItemByStr(name, child)
     
@@ -113,8 +113,8 @@ class TreeModel(QStandardItemModel):
         
     def saveChange(self, xml=None):
         self.xml.save()
-    
-    def itemData(self, item):
+
+    def itemDataString(self, item):
         if not item:
             return
         if item == self.root:
