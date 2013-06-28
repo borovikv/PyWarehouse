@@ -4,7 +4,7 @@ Created on Apr 5, 2013
 @author: vb
 '''
 from PyQt4 import QtGui, QtCore
-from MainFrame.Settings import getPathToIcon
+from PyWarehouse.Settings import getPathToIcon
 
 def openFile(path):
     f = QtCore.QFile(path)

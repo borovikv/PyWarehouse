@@ -6,7 +6,7 @@ Created on 22.05.2012
 import os
 from XMLFile.XML import XML, createXmlWithRoot
 from Dialogs.PreferencesDialog import PreferencesDialog
-from MainFrame import Settings
+from PyWarehouse import Settings
 
 class Preferences:
             
