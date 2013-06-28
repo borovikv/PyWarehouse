@@ -8,8 +8,8 @@ from XMLFile.XML import XML, XmlNames
 
 class NavigationalXML(XML):
     
-    def __init__(self, xml_file, xml_str=None, is_str_defoalt=False):
-        XML.__init__(self, xml_file, xml_str, is_str_defoalt)
+    def __init__(self, xml_file, xml_str=None, parseFromFile=False):
+        XML.__init__(self, xml_file, xml_str, parseFromFile)
         root = self.getDocumentElement()
         self.elements = {XmlNames.rootName: root}
         self.initElements(root)

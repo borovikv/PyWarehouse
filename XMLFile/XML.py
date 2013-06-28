@@ -8,19 +8,22 @@ from xml.dom.minidom import parse, parseString
 import os
 
 class XML:
-    def __init__(self, xml_file, xml_str=None, is_str_defoalt=False):
+
+
+    def __init__(self, xml_file, xml_str=None, parseFromFile=True):
         self.xml_file = xml_file
         
-        if not xml_str and not is_str_defoalt:
-            self.xml = parse(self.xml_file)
-        elif xml_str and is_str_defoalt:
-            try:
-                self.xml = parse(self.xml_file)
-            except:
-                self.createXML(xml_str)
+        if parseFromFile:
+            self.parseWithDefault(xml_str)
         else:
             self.createXML(xml_str)
             
+    def parseWithDefault(self, xml_str):
+        try:
+            self.xml = parse(self.xml_file)
+        except:
+            self.createXML(xml_str)
+
     def createXML(self, xmlStr):           
         self.xml = parseString(xmlStr)  
         self.save() 

@@ -12,18 +12,14 @@ from MainFrame import Settings
 class Keeper:
     def __init__(self):
         settings = os.path.join(Settings.USER_SETTINGS, "Keeper.xml")
-        
-        if not os.path.exists(settings):
-            self.stateXML = XML(settings, self.createXML())
-        else:
-            self.stateXML = XML(settings)  
+        self.stateXML = XML(settings, self.createXML(), os.path.exists(settings))
     
     def createXML(self):
         impl = getDOMImplementation()
         xml = impl.createDocument(None, "State", None)
-        state = xml.documentElement
         lastOpen = xml.createElement('lastState') 
-        state.appendChild(lastOpen)
+        root = xml.documentElement
+        root.appendChild(lastOpen)
            
         return xml.toxml(encoding='utf-8')
         
