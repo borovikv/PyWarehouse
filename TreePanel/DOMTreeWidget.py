@@ -100,7 +100,7 @@ class DOMTreeWidget(QtGui.QTreeView):
         self.dialog.showDialog(oldName)
         if self.dialog.hasResult():
             newName = self.dialog.getText() + suffix
-            self.model.renameNodeAttribute(self.currentItem, newName)
+            self.model.renameNode(self.currentItem, newName)
             self.callAction('rename', data, newName)
 
     def splitName(self, item):
@@ -141,7 +141,7 @@ class DOMTreeWidget(QtGui.QTreeView):
     
     def scrollToItem(self, item):
         if isinstance(item, (unicode, str)):
-            item = self.model.getItemFromStr(item)
+            item = self.model.getItemByStr(item)
         
         if item:
             index = item.index()
