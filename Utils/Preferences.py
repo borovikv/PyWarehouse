@@ -14,16 +14,15 @@ class Preferences:
         self.path = os.path.join(Settings.USER_SETTINGS, "preferences.xml")
         self.parent = parent
         self.preferencesDialog = PreferencesDialog(self, parent=parent)
-        self.xmlPath = self.getXMLPath()
+        self.setXMLPath()
         self.notesFolder = os.path.dirname(unicode(self.xmlPath))
     
-    def getXMLPath(self): 
+    def setXMLPath(self): 
         self.preferences = self.getPreferencesXml()
-        xmlPath = self.preferences.getValueByTagName("XMLPath", "value")
-        if not xmlPath or not os.path.exists(xmlPath):
-            xmlPath = ''
+        self.xmlPath = self.preferences.getValueByTagName("XMLPath", "value")
+        if not self.xmlPath or not os.path.exists(self.xmlPath):
+            self.xmlPath = ''
             self.setPreferences()
-        return xmlPath
 
     def getPreferencesXml(self):
         defaultXml = createXmlWithRoot('preferences', 'XMLPath')
@@ -36,7 +35,7 @@ class Preferences:
     
     def update(self):
         xmlPath = unicode(self.preferencesDialog.xmlPath)
-        if xmlPath and os.path.exists(xmlPath):
+        if xmlPath:
             self.xmlPath = xmlPath
             self.preferences.setValueByTagName("XMLPath", "value", self.xmlPath)
             self.parent.restart()

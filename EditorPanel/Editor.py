@@ -231,6 +231,7 @@ class Editor(QWebView):
         self.urlForCopy = self.path
     
     #---------------------------------------------------------------------------
+
     def openDoc(self, path):
         content = self.getHtmlStringFromFile(path)
         self.setHtml(content, QtCore.QUrl.fromLocalFile(path))
@@ -248,23 +249,23 @@ class Editor(QWebView):
             f.write(html)
     
     def rename(self, oldPath, newPath):
-        oldPath = unicode(oldPath)
-        newPath = unicode(newPath)
         self.saveDoc()
-        src = join(self.notesFolder, oldPath)
-        dst = join(self.notesFolder, newPath)
+        src = os.path.dirname(oldPath)
+        dst = os.path.dirname(newPath)
         shutil.move(src, dst)
-        os.rename(join(dst, oldPath + ".html"), join(dst, newPath + ".html"))
+        fileName = os.path.basename(oldPath)
+        os.rename(join(dst, fileName), newPath)
+        self.path = newPath
         
     def deleteDoc(self, path):
-        shutil.rmtree(join(self.notesFolder, path))
+        shutil.rmtree(path)
         self.path = None
     
     def getHtmlStringFromFile(self, path):
         if not os.path.exists(path): 
             path = join(TEMPLATES, "sources.html")
         with codecs.open(path, 'r', 'utf-8') as f:
-            template = u''.join(f.readlines())
+            template = unicode(f.read())
             template = self.insertHeader(template, self.extendedHeader)
             return template
 
@@ -309,21 +310,15 @@ class Editor(QWebView):
             self.on_start(event)
         
         if event.type == ObservableEvent.close:
-            self.on_close(event)
+            self.on_close()
         
         if event.type is ObservableEvent.execute:
             self.execute(event.getParam('command'), event.getParam('params'))
 
     def on_start(self, event):
-        name = event.getParam(ObservableEvent.name)
-        if not name:
-            return
-        path = join(self.notesFolder, name, name + '.html')
-        if os.path.exists(path):
-            self.openDoc(path)
+        pass
 
-
-    def on_close(self, event):
+    def on_close(self):
         if hasattr(self, 'path') and self.path:
             self.saveDoc()
             self.delete_unnecessary()
@@ -380,4 +375,43 @@ class Editor(QWebView):
     def getPathToFolder(self, folderName):
         curdir = os.path.dirname(self.path)   
         return join(curdir, folderName)
-            
+
+
+class EditorNotes(Editor):    
+    def __init__(self, notesFolder, parent = None):
+        super(EditorNotes, self).__init__(notesFolder, parent)        
+        
+    def getPathByName(self, name):
+        return join(self.notesFolder, name, name + '.html')
+    
+    def createFolders(self, path):
+        dirname = os.path.dirname(path)
+        if not os.path.exists(dirname):
+            os.mkdir(dirname)
+    
+    def newDoc(self, name):
+        self.openDoc(name)
+        
+    def openDoc(self, name):
+        name = unicode(name)
+        path = self.getPathByName(name)
+        self.createFolders(path)
+        if hasattr(self, 'path') and self.path:
+            self.saveDoc()
+        Editor.openDoc(self, path)
+    
+    def deleteDoc(self, name):
+        name = unicode(name)
+        path = join(self.notesFolder, name)
+        Editor.deleteDoc(self, path)
+    
+    def rename(self, oldName, newName):
+        oldName = unicode(oldName)
+        newName = unicode(newName)
+        Editor.rename(self, self.getPathByName(oldName), self.getPathByName(newName))
+    
+    def on_start(self, event):
+        name = event.getParam(ObservableEvent.name)
+        if not name:
+            return
+        self.openDoc(name)

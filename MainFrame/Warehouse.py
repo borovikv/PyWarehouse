@@ -1,5 +1,5 @@
 from PyQt4 import QtGui
-from EditorPanel.Editor import Editor
+from EditorPanel.Editor import EditorNotes
 from TreePanel.DOMTreeWidget import DOMTreeWidget
 from Utils.Preferences import Preferences
 from Utils.Observable import Observable
@@ -18,7 +18,7 @@ class Warehouse(QtGui.QWidget, Observable):
         self.preferences = Preferences(self)
         notesFolder = self.preferences.notesFolder
                 
-        self.editorPanel = Editor(notesFolder, self)
+        self.editorPanel = EditorNotes(notesFolder, self)
         actions = NavigatorActions(self.editorPanel, notesFolder)
         self.treePanel = DOMTreeWidget(self.preferences.xmlPath, actions)
         

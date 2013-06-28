@@ -3,10 +3,6 @@ Created on 22.05.2012
 
 @author: vb
 '''
-import os
-import shutil
-
-
 class NavigatorActions:
 
     def __init__(self, editor, notesFolder):
@@ -23,35 +19,18 @@ class NavigatorActions:
         
     
     
-    def addChild(self, path):
-        path = self.getFoolPath(path)
-        dirname = os.path.dirname(path)
-        os.mkdir(dirname)
-        
-        if hasattr(self.editorPanel, 'path') and self.editorPanel.path:
-            self.editorPanel.saveDoc()
-        self.editorPanel.openDoc(path)
+    def addChild(self, name):
+        self.editorPanel.openDoc(name)
         
     def renameNode(self, oldPath, newPath):
         self.editorPanel.rename(oldPath, newPath)
              
-    def itemClicked(self, path):
-        self.editorPanel.saveDoc()
-        self.editorPanel.openDoc(self.getFoolPath(path))
-        self.lastOpen = path
+    def itemClicked(self, name):
+        self.editorPanel.openDoc(name)
         
-    def deleteNode(self, item):
-        self.editorPanel.deleteDoc(unicode(item))
+    def deleteNode(self, name):
+        self.editorPanel.deleteDoc(name)
         #self.editorPanel.openDoc()
         
-    
-    #####################################################################################################
-    #
-    #                                          UTILS
-    #
-    #####################################################################################################
-    def getFoolPath(self, path):
-        path = unicode(path)
-        return os.path.join(self.notesFolder, path, path + ".html")
     
         
