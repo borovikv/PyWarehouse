@@ -12,7 +12,6 @@ class DialogKeyFilter(QtCore.QObject):
         self.escPress = False
         
     def eventFilter(self, obj, e):
-        
         if e.type() == QtCore.QEvent.KeyPress:
             self.escPress = False
             if e.key() == QtCore.Qt.Key_Escape:
@@ -25,22 +24,24 @@ class TreeDialog(QtGui.QDialog):
         QtGui.QDialog.__init__(self, parent)
         self.setWindowFlags(QtCore.Qt.Dialog | QtCore.Qt.CustomizeWindowHint)
         self.resize(400, 50)       
+        
         self.textField = QtGui.QLineEdit()
         vbox = QtGui.QVBoxLayout()
         vbox.addWidget(self.textField)
         self.setLayout(vbox)
+        
         self.dialogKeyFilter = DialogKeyFilter(self.textField)
         self.textField.installEventFilter(self.dialogKeyFilter)
         self.textField.editingFinished.connect(self.onTextChange)       
-       
-    def hasResult(self):
-        return self.result() == self.Accepted and self.getText() != ""
     
     def onTextChange(self):      
         if not self.dialogKeyFilter.escPress:
             self.done(self.Accepted)
         else:
             self.reject()
+
+    def hasResult(self):
+        return self.result() == self.Accepted and self.getText() != ""
     
     def getText(self):
         text = self.textField.text().toUtf8()
