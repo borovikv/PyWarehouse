@@ -10,7 +10,7 @@ from Utils.Events import ObservableEvent
 class EditorNotes(Editor):    
     def __init__(self, notesFolder, parent = None):
         super(EditorNotes, self).__init__(notesFolder, parent)   
-        self.a = {
+        self.operation = {
             'add': self.openDoc,
             'open': self.openDoc,
             'delete': self.deleteDoc, 
@@ -18,17 +18,10 @@ class EditorNotes(Editor):
         }     
     
     def call(self, name, *args, **kwargs):
-        a = self.a.get(name)
-        if a:
-            a(*args, **kwargs)    
+        operation = self.operation.get(name)
+        if operation:
+            operation(*args, **kwargs)    
     
-    def getPathByName(self, name):
-        return os.path.join(self.notesFolder, name, name + '.html')
-    
-    def createFolders(self, path):
-        dirname = os.path.dirname(path)
-        if not os.path.exists(dirname):
-            os.mkdir(dirname)
     
     def newDoc(self, name):
         self.openDoc(name)
@@ -56,3 +49,12 @@ class EditorNotes(Editor):
         if not name:
             return
         self.openDoc(name)
+
+    def getPathByName(self, name):
+        return os.path.join(self.notesFolder, name, name + '.html')
+    
+    def createFolders(self, path):
+        dirname = os.path.dirname(path)
+        if not os.path.exists(dirname):
+            os.mkdir(dirname)
+    
