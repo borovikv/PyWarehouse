@@ -127,11 +127,11 @@ class Editor(QWebView):
         self.findReplaceDialog.show()
     
     def findNext(self):
-        text = self.getTextToFind()
+        text = self.getText()
         self.findText(text)
     
     def findAll(self):
-        text = self.getTextToFind()
+        text = self.getText()
         self.findText(text, QWebPage.HighlightAllOccurrences)
 
     def replaceNext(self):
@@ -141,11 +141,11 @@ class Editor(QWebView):
         self.replace('all')
 
     def replace(self, what):
-        text = self.getTextToFind()
+        text = self.getText()
         newtext = self.findReplaceDialog.textToReplace()  
         self.jsTrigger('replace', what, text, newtext)
     
-    def getTextToFind(self):     
+    def getText(self):     
         text = self.findReplaceDialog.textToFind()  
         if not text:
             text = self.selectedText()

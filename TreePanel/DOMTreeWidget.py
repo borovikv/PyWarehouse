@@ -7,6 +7,7 @@ from TreePanel.TreeDialog import TreeDialog;
 from TreePanel.TreeModel import TreeModel;
 from Utils.Events import ObservableEvent
 from Utils.Keeper import Keeper
+from Utils.QUtils import createQAction
 
 class DOMTreeWidget(QtGui.QTreeView):
     def __init__(self, xmlFileName, actions=None, parent=None):
@@ -15,39 +16,31 @@ class DOMTreeWidget(QtGui.QTreeView):
         self.actions = actions
         self.dialog = TreeDialog(self) 
         self.model = TreeModel(xmlFileName)
+        self.currentItem = self.model.root
         self.setModel(self.model) 
-        self.clicked[QtCore.QModelIndex].connect(self.itemClick)  
         self.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
         self.setDragDropMode(QtGui.QAbstractItemView.InternalMove)
         self.setDropIndicatorShown(True)
         self.showDropIndicator()
         
+        self.clicked[QtCore.QModelIndex].connect(self.itemClick)  
         self.createMenu()
         
-    def updateModel(self, newXML):
-        self.model = TreeModel(newXML)
-        self.setModel(self.model)
-    
+
     def createMenu(self):        
-        addAction = QtGui.QAction('add', self)
-        addAction.triggered.connect(self.addChild)
-        
-        deleteAction = QtGui.QAction('delete', self)
-        deleteAction.triggered.connect(self.deleteNode)
-        
-        renameAction = QtGui.QAction("rename", self)
-        renameAction.triggered.connect(self.renameNode)
-        
         self.menu = QtGui.QMenu(self)
-        self.menu.addAction(addAction)
-        self.menu.addAction(renameAction)
-        self.menu.addAction(deleteAction)
+        self.menu.addAction( createQAction(self, 'add', self.addChild) )
+        self.menu.addAction( createQAction(self, 'delete', self.deleteNode) )
+        self.menu.addAction( createQAction(self, 'rename', self.renameNode) )
     
-    ###############################################################################################
+    ############################################################################
     #
     # EVENTS
     #
-    ###############################################################################################
+    ############################################################################
+    def updateModel(self, newXML):
+        self.model = TreeModel(newXML)
+        self.setModel(self.model)
     
     def contextMenuEvent(self, event):
         self.menu.exec_(event.globalPos())
@@ -60,80 +53,92 @@ class DOMTreeWidget(QtGui.QTreeView):
         index = self.indexAt(e.pos())
         item = self.model.itemFromIndex(index)
         if item:
-            self.curent_item = item
+            self.currentItem = item
         else:
-            self.curent_item = self.model.root
+            self.currentItem = self.model.root
         return QtGui.QTreeView.mousePressEvent(self, e)
     
-    ###############################################################################################
+    ############################################################################
     #
     # ACTIONS
     #
-    ###############################################################################################
+    ############################################################################
+    # CLICK
+    def itemClick(self):
+        self.item = self.currentItem
+        name = self.itemData(self.currentItem)
+        self.callAction('open', name)
        
+    # ADDCHILd
     def addChild(self):
-        item = self.curent_item
         self.dialog.showDialog("")
-        
-        if self.dialog.result() == self.dialog.Accepted and self.dialog.getTextToFind() != "":
-            newItem = self.model.addChild(item,
-                                          self.dialog.getTextToFind() + '@' + str(self.model.getId()))
-            self.model.incrimentId()
-            self.scrollToItem(newItem)
-            
-            if self.actions:
-                self.actions.call('add', newItem.data().toString())
-          
+        if self.dialog.hasResult():
+            newItem = self.createNode(self.currentItem)
+            self.callAction('add', self.itemData(newItem))
+
+    def createNode(self, item):
+        newItem = self.model.addChild(item, self.createName())
+        self.model.incrimentId()
+        self.scrollToItem(newItem)
+        return newItem
+
+    def createName(self):
+        return self.dialog.getText() + '@' + str(self.model.getId())
+
+    # DELETE
     def deleteNode(self):
-        item = self.curent_item
-        if item == self.model.root:
+        if self.currentItem == self.model.root:
             return
-        
-        self.actions.call('delete', self.item_data(item))
-        self.model.deleteNode(item)
-          
+        self.callAction('delete', self.itemData(self.currentItem))
+        self.model.deleteNode(self.currentItem)
+
+    # RENAME
     def renameNode(self):
-        item = self.curent_item
-        if item == self.model.root:
+        if self.currentItem == self.model.root:
             return
-        
-        data = unicode(self.item_data(item))
+        oldName, suffix, data = self.splitName(self.currentItem)
+        self.dialog.showDialog(oldName)
+        if self.dialog.hasResult():
+            newName = self.dialog.getText() + suffix
+            self.model.renameNodeAttribute(self.currentItem, newName)
+            self.callAction('rename', data, newName)
+
+    def splitName(self, item):
+        data = unicode(self.itemData(item))
         i = data.rfind('@')
         if i >= 0:
             suffix = data[i:]
         else:
             suffix = ''
-        
-        oldPath = data[0:i]
-        self.dialog.showDialog(oldPath)
-        if self.dialog.result() == self.dialog.Accepted and self.dialog.getTextToFind() != "":
-            value = self.dialog.getTextToFind() + suffix
-            self.model.renameNodeAttribute(item, value)
-            self.actions.call('rename', data, self.item_data(item))
-            
-    def itemClick(self):
-        self.item = self.curent_item 
-        name = self.item_data(self.item)
-        self.actions.call('open', name)
-              
+        oldName = data[0:i]
+        return oldName, suffix, data
+
+    
+    def callAction(self, name, *args, **kwargs):
+        if self.actions:
+            self.actions.call(name, *args, **kwargs)
+
+    # UPDATE
     def update(self, event):
-        if event.type == ObservableEvent.start and event.getParam(ObservableEvent.name):
+        isStartEvent = ( event.type == ObservableEvent.start 
+                         and event.getParam(ObservableEvent.name))
+        if isStartEvent:
             self.scrollToItem(event.getParam(ObservableEvent.name))
             
-        if event.type == ObservableEvent.close and hasattr(self, "item"):
+        isCloseEvent = ( event.type == ObservableEvent.close 
+                         and hasattr(self, "item") )
+        if isCloseEvent:
             keeper = Keeper()
-            try:
-                state = self.item_data(self.item)
-            except:
-                state = ""
-            #print unicode(state, 'utf-8')
-            keeper.setLastState(state)
+            keeper.setLastState(self.getCurrentState())
     
-    ###############################################################################################
-    #
-    # UTILS
-    #
-    ###############################################################################################
+    def getCurrentState(self):
+        try:
+            state = self.itemData(self.currentItem)
+        except:
+            state = ""
+        return state
+
+    
     def scrollToItem(self, item):
         if isinstance(item, (unicode, str)):
             item = self.model.getItemFromStr(item)
@@ -147,5 +152,5 @@ class DOMTreeWidget(QtGui.QTreeView):
         first = self.model.root.child(0)
         return first
     
-    def item_data(self, item):
+    def itemData(self, item):
         return item.data().toString() 

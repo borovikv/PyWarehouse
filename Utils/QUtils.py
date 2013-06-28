@@ -83,4 +83,8 @@ class Icon(QtGui.QIcon):
     
     def __init__(self, name):
         super(Icon, self).__init__(getPathToIcon(name))
-        
+
+def createQAction(obj, name, func):
+    addAction = QtGui.QAction(name, obj)
+    addAction.triggered.connect(func)
+    return addAction

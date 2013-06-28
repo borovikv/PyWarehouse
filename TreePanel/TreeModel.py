@@ -38,7 +38,7 @@ class TreeModel(QStandardItemModel):
     ###############################################################################################
                 
     def addChild(self, parent, attrValue):
-        self.xml.createElement(self.item_data(parent), attrValue)
+        self.xml.createElement(self.itemData(parent), attrValue)
         item = self.createItem(attrValue)
         parent.appendRow(item)    
         return item   
@@ -47,7 +47,7 @@ class TreeModel(QStandardItemModel):
         if item == self.root:
             return
         
-        self.xml.deleteElement(self.item_data(item))
+        self.xml.deleteElement(self.itemData(item))
         parent = item.parent()
         if not parent:
             parent = self.root
@@ -57,7 +57,7 @@ class TreeModel(QStandardItemModel):
         if item == self.root:
             return
         
-        self.xml.renameElement(self.item_data(item), newAttrValue)
+        self.xml.renameElement(self.itemData(item), newAttrValue)
         item.setData(newAttrValue) 
         item.setText(self.getName(newAttrValue))
     
@@ -69,7 +69,7 @@ class TreeModel(QStandardItemModel):
         if parent.hasChildren():
             for j in range(parent.rowCount()):
                 child = parent.child(j)
-                if self.item_data(child) == name:
+                if self.itemData(child) == name:
                     return child
                 
                 node = self.getItemFromStr(name, child)
@@ -111,19 +111,19 @@ class TreeModel(QStandardItemModel):
             parentItem = self.root
             parent = XmlNames.rootName
         else:
-            parent = self.item_data(parentItem)
+            parent = self.itemData(parentItem)
         
-        newChild = self.item_data(item)
+        newChild = self.itemData(item)
         
         row = item.row()
         if row + 1 == parentItem.rowCount():
             refChild = None
         else:
-            refChild = self.item_data(parentItem.child(row + 1))
+            refChild = self.itemData(parentItem.child(row + 1))
         
         self.xml.move(parent, newChild, refChild)
         
-    def item_data(self, item):
+    def itemData(self, item):
         return item.data().toString()
     
     def getName(self, strName):

@@ -33,16 +33,17 @@ class TreeDialog(QtGui.QDialog):
         self.textField.installEventFilter(self.dialogKeyFilter)
         self.textField.editingFinished.connect(self.onTextChange)       
        
+    def hasResult(self):
+        return self.result() == self.Accepted and self.getText() != ""
+    
     def onTextChange(self):      
         if not self.dialogKeyFilter.escPress:
             self.done(self.Accepted)
         else:
             self.reject()
     
-    def getTextToFind(self):
+    def getText(self):
         text = self.textField.text().toUtf8()
-        #print unicode(text, 'utf-8')
-        #return #unicode(self.textField.text(), 'utf-8')
         return unicode(text, 'utf-8')
     
     def showDialog(self, nodeText):
