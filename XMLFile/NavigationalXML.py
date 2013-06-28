@@ -4,7 +4,7 @@ Created on 27.05.2012
 @author: vb
 '''
 from XMLFile.XML import XML
-from MainFrame.XmlNames import XmlNames
+from MainFrame.Warehouse import XmlNames
 
 
 class NavigationalXML(XML):

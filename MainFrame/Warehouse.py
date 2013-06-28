@@ -1,5 +1,4 @@
-from PyQt4 import QtGui, QtCore
-#--------------------------------------------------------------------------------
+from PyQt4 import QtGui
 from EditorPanel.Editor import Editor
 from TreePanel.DOMTreeWidget import DOMTreeWidget
 from Utils.Preferences import Preferences
@@ -10,7 +9,11 @@ from Utils.Events import ObservableEvent
 from Dialogs.CatsDialog import CatsDialog
 from Utils.QUtils import makeButton, getShortcut, addShortcutAction, Icon
 
-#--------------------------------------------------------------------------------
+class XmlNames:
+    attributeName = "path"
+    tagName = "Thought"
+    rootName = "Warehouse"
+    splitChar = "@"
 
 class Warehouse(QtGui.QWidget, Observable):
     

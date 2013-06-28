@@ -7,7 +7,8 @@ Created on 10.01.2012
 from PyQt4.QtGui import QStandardItemModel;
 from PyQt4 import QtGui
 from XMLFile.NavigationalXML import NavigationalXML 
-from MainFrame.XmlNames import XmlNames
+from MainFrame.Warehouse import XmlNames
+
 
 class TreeModel(QStandardItemModel):  
     def __init__(self, xmlFileName, parent=None):
