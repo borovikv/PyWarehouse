@@ -4,7 +4,6 @@ Created on 22.05.2012
 
 @author: vb
 '''
-from Utils.Resources import Resources
 import os
 from XMLFile.XML import XML
 from xml.dom.minidom import getDOMImplementation

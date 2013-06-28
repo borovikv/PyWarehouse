@@ -9,12 +9,6 @@ from Utils.Events import ObservableEvent
 from Dialogs.CatsDialog import CatsDialog
 from Utils.QUtils import makeButton, getShortcut, addShortcutAction, Icon
 
-class XmlNames:
-    attributeName = "path"
-    tagName = "Thought"
-    rootName = "Warehouse"
-    splitChar = "@"
-
 class Warehouse(QtGui.QWidget, Observable):
     
     def __init__(self, parent=None):

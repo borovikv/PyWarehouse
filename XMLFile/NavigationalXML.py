@@ -3,8 +3,7 @@ Created on 27.05.2012
 
 @author: vb
 '''
-from XMLFile.XML import XML
-from MainFrame.Warehouse import XmlNames
+from XMLFile.XML import XML, XmlNames
 
 
 class NavigationalXML(XML):

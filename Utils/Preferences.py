@@ -6,9 +6,7 @@ Created on 22.05.2012
 import os
 from XMLFile.XML import XML
 from xml.dom.minidom import getDOMImplementation
-from PyQt4 import QtCore
 from Dialogs.PreferencesDialog import PreferencesDialog
-from Utils.Resources import Resources
 from MainFrame import Settings
 
 class Preferences:
