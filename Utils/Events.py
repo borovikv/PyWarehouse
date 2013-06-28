@@ -11,9 +11,9 @@ class ObservableEvent:
     name = "name"
     execute = "execute"
     
-    def __init__(self, t, params = None):
+    def __init__(self, t, **params):
         self.type = t
-        self.params = params if params and isinstance(params, dict) else {}
+        self.params = params
     
     def setParam(self, name, value):
         self.params[name] = value

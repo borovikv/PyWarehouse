@@ -8,10 +8,11 @@ from Utils.Resources import Resources
 import os
 from XMLFile.XML import XML
 from xml.dom.minidom import getDOMImplementation
+from MainFrame import Settings
 
 class Keeper:
     def __init__(self):
-        settings = os.path.join(Resources.getSettingsFolderPath(), "Keeper.xml")
+        settings = os.path.join(Settings.USER_SETTINGS, "Keeper.xml")
         
         if not os.path.exists(settings):
             self.stateXML = XML(settings, self.createXML())

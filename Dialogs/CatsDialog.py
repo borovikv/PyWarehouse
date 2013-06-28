@@ -237,8 +237,7 @@ class CatsDialog(DialogBox, Observable):
         if cmd and cmd in self.self_action_list:
             self.execute(cmd, params)
         elif cmd:
-            event = ObservableEvent(ObservableEvent.execute, 
-                                    {"command": cmd, "params": params})
+            event = ObservableEvent(ObservableEvent.execute, command=cmd, params=params)
             self.notifyObservers(event)
             self.hide()
     

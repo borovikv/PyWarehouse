@@ -4,75 +4,65 @@ from EditorPanel.Editor import Editor
 from TreePanel.DOMTreeWidget import DOMTreeWidget
 from Utils.Preferences import Preferences
 from Utils.Observable import Observable
-from Utils.Resources import Resources
 from Utils.NavigatorActions import NavigatorActions
 from Utils.Keeper import Keeper
 from Utils.Events import ObservableEvent
 from Dialogs.CatsDialog import CatsDialog
+from Utils.QUtils import makeButton, getShortcut, addShortcutAction, Icon
 
 #--------------------------------------------------------------------------------
 
 class Warehouse(QtGui.QWidget, Observable):
+    
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
         Observable.__init__(self)
-        self.preferences = Preferences(self)
-        notesFolder = self.preferences.getNotesFolder()
         
+        self.preferences = Preferences(self)
+        notesFolder = self.preferences.notesFolder
+                
         self.editorPanel = Editor(notesFolder, self)
         actions = NavigatorActions(self.editorPanel, notesFolder)
         self.treePanel = DOMTreeWidget(self.preferences.xmlPath, actions)
         
-        Observable.registerObserver(self, self.treePanel)     
-        Observable.registerObserver(self, self.editorPanel)
-        
-        self.makeInterface()
-        
-        self.catsDialog = CatsDialog(self.editorPanel.editor_actions.keys(), self)
+        self.registerObserver(self.treePanel)     
+        self.registerObserver(self.editorPanel)
+
+        self.catsDialog = CatsDialog(self.editorPanel.getActions(), self)
         self.catsDialog.registerObserver(self.editorPanel)
         self.catsDialog.registerObserver(self.treePanel)
-        act = QtGui.QAction(self)
-        act.setShortcut(QtGui.QKeySequence(QtCore.Qt.CTRL + QtCore.Qt.Key_Space))
-        act.triggered.connect(self.showDialog)
-        self.addAction(act)
+        addShortcutAction(self, getShortcut('CTRL', 'SPACE'), self.showDialog)
+        
+        self.makeInterface()
         self.start()
-    
-    def makeButton(self, name, icon, func):
-        but = QtGui.QPushButton(icon, name)
-        but.clicked.connect(func) 
-        return but
-       
+
     def makeInterface(self):
         self.setWindowTitle("Warehouse")
-        self.setWindowIcon(Resources.getIcon(Resources.iconWindow))
-        #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-             
-        self.hideButton = self.makeButton("", Resources.getIcon(Resources.iconArrowLeft), self.hideShow)
-        self.prefButton = self.makeButton("", Resources.getIcon(Resources.iconPrefIcon), self.preferences.setPreferences) 
+        self.setWindowIcon(Icon(Icon.window))
         
+        self.hideButton = makeButton("", Icon(Icon.arrowLeft), self.hideShow)
+        self.prefButton = makeButton("", Icon(Icon.preferences), self.preferences.setPreferences) 
+        showInFolderBut = makeButton('', Icon(Icon.openFolder), 
+                                     self.editorPanel.getAction('show in folder'))
+        
+        gbox = QtGui.QGridLayout()
+        # Button Panel
         vboxLeft = QtGui.QVBoxLayout()
         vboxLeft.addWidget(self.hideButton)
         vboxLeft.addWidget(self.prefButton)
-        elements = self.editorPanel.getInterfacesElements()
-        for e in elements:
-            vboxLeft.addWidget(elements[e])
+        if showInFolderBut:
+            vboxLeft.addWidget(showInFolderBut)
         vboxLeft.insertStretch(-1)
+        gbox.addLayout(vboxLeft, 0, 0)
         
-        #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-#        tab = QtGui.QTabWidget()
-#        tab.addTab(QWidget, QString)
-#        
-        
-        #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        # Tree and editor panel
         self.spliter = QtGui.QSplitter()
         self.spliter.addWidget(self.treePanel)
         self.spliter.addWidget((self.editorPanel))
-        vbox = QtGui.QVBoxLayout()
-        vbox.addWidget(self.spliter)
-        #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        gbox = QtGui.QGridLayout()
-        gbox.addLayout(vboxLeft, 0, 0)
-        gbox.addLayout(vbox, 0, 1)
+        vboxRight = QtGui.QVBoxLayout()
+        vboxRight.addWidget(self.spliter)
+        gbox.addLayout(vboxRight, 0, 1)
+
         self.setLayout(gbox)
         self.showMaximized()
         
@@ -80,42 +70,35 @@ class Warehouse(QtGui.QWidget, Observable):
         self.catsDialog.show(self.editorPanel.selectedText())
             
     def hideShow(self):
-        secondPanel = self.spliter.children()[self.spliter.indexOf(self.treePanel)]
-        firstPanel = self.spliter.children()[self.spliter.indexOf(self.editorPanel)]
-        if firstPanel.width() != 0:
-            self.navWidth = secondPanel.width()
-            self.editWidth = firstPanel.width()
-
-        if firstPanel.width() != 0:
-            self.spliter.setSizes([0, self.navWidth + self.editWidth])
-            self.hideButton.setIcon(Resources.getIcon(Resources.iconArrowRight))
+        if self.treePanel.width() != 0:
+            self.hideTrePanel()
         else:
-            self.spliter.setSizes([self.editWidth, self.navWidth])
-            self.hideButton.setIcon(Resources.getIcon(Resources.iconArrowLeft))
-    
-    def closeEvent(self, e):
-        Observable.notifyObservers(self, ObservableEvent(ObservableEvent.close))
+            self.showTreePanel()
 
+    def hideTrePanel(self):
+        self.navWidth = self.treePanel.width()
+        self.editWidth = self.editorPanel.width()
+        self.spliter.setSizes([0, self.navWidth + self.editWidth])
+        self.hideButton.setIcon(Icon(Icon.arrowRight))
+
+    def showTreePanel(self):
+        self.spliter.setSizes([self.navWidth, self.editWidth])
+        self.hideButton.setIcon(Icon(Icon.arrowLeft))
+    
     def start(self):
-        
-        
-        event = ObservableEvent(ObservableEvent.start)
         keeper = Keeper()
         lastState = keeper.getLastState()
-        event.setParam(ObservableEvent.name, lastState)
-        if lastState:
-            path = self.preferences.getNotePath(lastState)
-            event.setParam(ObservableEvent.path, path)
-        else:
-            event.setParam(ObservableEvent.path, "")
-        Observable.notifyObservers(self, event)
+        event = ObservableEvent(ObservableEvent.start, name=lastState)
+        self.notifyObservers(event)
     
+    def closeEvent(self, e):
+        self.notifyObservers(ObservableEvent(ObservableEvent.close))
+
     def restart(self):
         if not hasattr(self, "editorPanel"):
             return
-        
         self.editorPanel.saveDoc()
-        actions = NavigatorActions(self.editorPanel, self.preferences.getNotesFolder())
+        actions = NavigatorActions(self.editorPanel, self.preferences.notesFolder)
         self.treePanel.updateModel(self.preferences.xmlPath, actions)
         
         

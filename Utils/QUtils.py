@@ -4,6 +4,7 @@ Created on Apr 5, 2013
 @author: vb
 '''
 from PyQt4 import QtGui, QtCore
+from MainFrame.Settings import getPathToIcon
 
 def openFile(path):
     f = QtCore.QFile(path)
@@ -17,7 +18,7 @@ def makeButton(name, icon=None, func=None):
         but = QtGui.QPushButton(name)
     if func:
         but.clicked.connect(func) 
-    return but 
+        return but 
 
 def openFolder(parent, path):
     process2 = QtCore.QProcess(parent)
@@ -52,3 +53,34 @@ def getGoodUrl(link):
                 return url
         
         return QtCore.QUrl(link, QtCore.QUrl.TolerantMode)  
+
+def getShortcut(*keys):
+    _ = QtCore.Qt
+    qtkeys = { 
+        'CTRL': _.CTRL,
+        'SPACE': _.Key_Space,
+        'ALT': _.ALT,
+        'SHIFT': _.SHIFT
+    }
+    sequence = sum([qtkeys.get(key) for key in keys if qtkeys.get(key)])
+    print sequence
+    if sequence:
+        return QtGui.QKeySequence(sequence)
+
+def addShortcutAction(obj, shortcut, func):
+    act = QtGui.QAction(obj)
+    act.setShortcut(shortcut)
+    act.triggered.connect(func)
+    obj.addAction(act)
+
+class Icon(QtGui.QIcon):
+    window = "Icon"
+    arrowLeft = "arrowLeft"
+    arrowRight = "arrowRight"
+    preferences = "preferences-icon"
+    edit = "Edit"
+    openFolder = "Show"
+    
+    def __init__(self, name):
+        super(Icon, self).__init__(getPathToIcon(name))
+        

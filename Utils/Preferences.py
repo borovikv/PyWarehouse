@@ -9,6 +9,7 @@ from xml.dom.minidom import getDOMImplementation
 from PyQt4 import QtCore
 from Dialogs.PreferencesDialog import PreferencesDialog
 from Utils.Resources import Resources
+from MainFrame import Settings
 
 class Preferences:
             
@@ -16,16 +17,15 @@ class Preferences:
         self.parent = parent
         self.preferencesDialog = PreferencesDialog(self, parent=parent)
         self.setXMLPath()
+        self.notesFolder = os.path.dirname(unicode(self.xmlPath))
     
-    def getNotesFolder(self):
-        return os.path.dirname(unicode(self.xmlPath))
     
     def setPreferences(self):
         self.preferencesDialog.show_prep()
         self.preferencesDialog.exec_()
     
     def getNotePath(self, name):
-        return os.path.join(unicode(self.getNotesFolder()), name, name + ".html")
+        return os.path.join(unicode(self.notesFolder), name, name + ".html")
     
     def update(self):
         self.xmlPath = unicode(self.preferencesDialog.xmlPath)
@@ -44,7 +44,7 @@ class Preferences:
     #                                                                                           #
     #############################################################################################
     def setXMLPath(self): 
-        settings = os.path.join(Resources.getSettingsFolderPath(), "settings.xml")
+        settings = os.path.join(Settings.USER_SETTINGS, "settings.xml")
         
         if not os.path.exists(settings):
             self.settingsXML = XML(settings, self.createSettings())
@@ -72,5 +72,4 @@ class Preferences:
         return xml.toxml(encoding='utf-8')    
 
     
-    def tr(self, string):
-        return QtCore.QObject.tr(QtCore.QObject(), string)
+    

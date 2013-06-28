@@ -12,7 +12,6 @@ from os.path import join
 import shutil
 import locale
 from EditorPanel.EditorFilter import EditorFilter
-from Utils.Resources import Resources
 from Utils.Events import ObservableEvent
 from Dialogs.InsertDialog import InsertDialog
 from Utils import QUtils
@@ -27,7 +26,9 @@ locale.setlocale(locale.LC_ALL, '')
 
 EDITOR_FOLDER = os.path.dirname(__file__)        
 TEMPLATES = join(EDITOR_FOLDER, 'templates')
-SOURCE_FOLDER  = join(EDITOR_FOLDER, '_source')
+SOURCE = '_source'
+SOURCE_FOLDER  = join(EDITOR_FOLDER, SOURCE)
+JS_FOLDER = join(EDITOR_FOLDER, 'JScripts')
 
 class Editor(QWebView):
     FILES_FOLDER = "Files" 
@@ -47,9 +48,7 @@ class Editor(QWebView):
         self.createActions()
      
     def makeHeaders(self):
-        self.context =  { 'imgFolder': Resources.getImageFolderPath(),
-                          'scriptFolderPath': Resources.getScriptsFolder(),
-                          'cssFolderPath': Resources.getStylesFolder(), }
+        self.context =  { 'scriptFolderPath': JS_FOLDER, }
         f = file(join(TEMPLATES, 'header.html'))
         header = unicode(f.read())
         f.close()
@@ -64,11 +63,11 @@ class Editor(QWebView):
         copy_folder(SOURCE_FOLDER, dest)
     
     
-    def getInterfacesElements(self):
-        showInButton = QUtils.makeButton("", Resources.getIcon(Resources.iconOpenFolder), self.showInFolder)
-        interfaceElements = {}
-        interfaceElements["showInButton"] = showInButton
-        return interfaceElements
+    def getAction(self, name):
+        return self.editor_actions.get(name)
+    
+    def getActions(self):
+        return self.editor_actions.keys()
     
     def createActions(self):
         self.events = {
@@ -167,7 +166,7 @@ class Editor(QWebView):
             self.execCommand("createLink", path);
 
     def insertLinkToFile(self, url, text):
-        icon = Resources.getSource("File.png")
+        icon = join('..', SOURCE, "File.png")
         htmlText = "&nbsp;<div class='File'><a href='%s'><img src='%s'>%s</a></div>&nbsp" % (url, icon, text)
         self.execCommand("insertHTML", htmlText)
 
@@ -316,7 +315,10 @@ class Editor(QWebView):
             self.execute(event.getParam('command'), event.getParam('params'))
 
     def on_start(self, event):
-        path = event.getParam(ObservableEvent.path)
+        name = event.getParam(ObservableEvent.name)
+        if not name:
+            return
+        path = join(self.notesFolder, name, name + '.html')
         if os.path.exists(path):
             self.openDoc(path)
 
