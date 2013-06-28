@@ -4,7 +4,7 @@ Created on 22.05.2012
 @author: vb
 '''
 import os
-from XMLFile.XML import XML
+from XMLFile.XML import XML, createXmlWithRoot
 from xml.dom.minidom import getDOMImplementation
 from Dialogs.PreferencesDialog import PreferencesDialog
 from MainFrame import Settings
@@ -21,9 +21,6 @@ class Preferences:
     def setPreferences(self):
         self.preferencesDialog.show_prep()
         self.preferencesDialog.exec_()
-    
-    def getNotePath(self, name):
-        return os.path.join(unicode(self.notesFolder), name, name + ".html")
     
     def update(self):
         self.xmlPath = unicode(self.preferencesDialog.xmlPath)
@@ -42,14 +39,14 @@ class Preferences:
     #                                                                                           #
     #############################################################################################
     def setXMLPath(self): 
-        settings = os.path.join(Settings.USER_SETTINGS, "settings.xml")
+        preferences = os.path.join(Settings.USER_SETTINGS, "preferences.xml")
         
-        if not os.path.exists(settings):
-            self.settingsXML = XML(settings, self.createSettings())
+        if not os.path.exists(preferences):
+            self.settingsXML = XML(preferences, createXmlWithRoot('preferences', 'XMLPath'))
             self.xmlPath = ""
             self.setPreferences()
         else:
-            self.settingsXML = XML(settings)
+            self.settingsXML = XML(preferences)
         
         xmlPath = self.settingsXML.getValueByTagName("XMLPath", "value")
         
@@ -60,14 +57,5 @@ class Preferences:
             
         return xmlPath
     
-    def createSettings(self):
-        impl = getDOMImplementation()
-        xml = impl.createDocument(None, "Settings", None)
-        settings = xml.documentElement
-        w = xml.createElement("XMLPath")
-        settings.appendChild(w)
-           
-        return xml.toxml(encoding='utf-8')    
-
     
     

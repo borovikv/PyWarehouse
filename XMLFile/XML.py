@@ -4,12 +4,10 @@ Created on 23.02.2012
 @author: vb
 '''
 import codecs
-from xml.dom.minidom import parse, parseString
+from xml.dom.minidom import parse, parseString, getDOMImplementation
 import os
 
 class XML:
-
-
     def __init__(self, xml_file, xml_str=None, parseFromFile=True):
         self.xml_file = xml_file
         
@@ -84,3 +82,11 @@ class XmlNames:
     rootName = "Warehouse"
     splitChar = "@"    
         
+
+def createXmlWithRoot(name, rootName):
+    impl = getDOMImplementation()
+    xml = impl.createDocument(None, name, None)
+    root = xml.documentElement
+    w = xml.createElement(rootName)
+    root.appendChild(w)
+    return xml.toxml(encoding='utf-8')
