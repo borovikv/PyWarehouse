@@ -7,15 +7,6 @@ from TreePanel.TreeDialog import TreeDialog;
 from TreePanel.TreeModel import TreeModel;
 from Utils.Events import ObservableEvent
 from Utils.Keeper import Keeper
-        
-class EventFilter(QtCore.QObject):
-    def __init__(self, parent=None):
-        QtCore.QObject.__init__(self, parent)
-    def eventFilter(self, obj, e):
-        
-        if e.type() == QtCore.QEvent.DragEnter:
-            print(obj, e)
-        return QtCore.QObject.eventFilter(self, obj, e)
 
 class DOMTreeWidget(QtGui.QTreeView):
     def __init__(self, xmlFileName, actions=None, parent=None):
@@ -25,7 +16,6 @@ class DOMTreeWidget(QtGui.QTreeView):
         self.dialog = TreeDialog(self) 
         self.model = TreeModel(xmlFileName)
         self.setModel(self.model) 
-        
         self.clicked[QtCore.QModelIndex].connect(self.itemClick)  
         self.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
         self.setDragDropMode(QtGui.QAbstractItemView.InternalMove)
@@ -34,10 +24,9 @@ class DOMTreeWidget(QtGui.QTreeView):
         
         self.createMenu()
         
-    def updateModel(self, newXML, actions):
+    def updateModel(self, newXML):
         self.model = TreeModel(newXML)
         self.setModel(self.model)
-        self.actions = actions
     
     def createMenu(self):        
         addAction = QtGui.QAction('add', self)
@@ -93,14 +82,14 @@ class DOMTreeWidget(QtGui.QTreeView):
             self.scrollToItem(newItem)
             
             if self.actions:
-                self.actions.addChild(newItem.data().toString())
+                self.actions.call('add', newItem.data().toString())
           
     def deleteNode(self):
         item = self.curent_item
         if item == self.model.root:
             return
         
-        self.actions.deleteNode(self.item_data(item))
+        self.actions.call('delete', self.item_data(item))
         self.model.deleteNode(item)
           
     def renameNode(self):
@@ -120,12 +109,12 @@ class DOMTreeWidget(QtGui.QTreeView):
         if self.dialog.result() == self.dialog.Accepted and self.dialog.getTextToFind() != "":
             value = self.dialog.getTextToFind() + suffix
             self.model.renameNodeAttribute(item, value)
-            self.actions.renameNode(data, self.item_data(item))
+            self.actions.call('rename', data, self.item_data(item))
             
     def itemClick(self):
         self.item = self.curent_item 
-        path = self.item_data(self.item)
-        self.actions.itemClicked(path)
+        name = self.item_data(self.item)
+        self.actions.call('open', name)
               
     def update(self, event):
         if event.type == ObservableEvent.start and event.getParam(ObservableEvent.name):

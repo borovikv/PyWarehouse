@@ -1,13 +1,12 @@
 from PyQt4 import QtGui
-from EditorPanel.Editor import EditorNotes
 from TreePanel.DOMTreeWidget import DOMTreeWidget
 from Utils.Preferences import Preferences
 from Utils.Observable import Observable
-from Utils.NavigatorActions import NavigatorActions
 from Utils.Keeper import Keeper
 from Utils.Events import ObservableEvent
 from Dialogs.CatsDialog import CatsDialog
 from Utils.QUtils import makeButton, getShortcut, addShortcutAction, Icon
+from EditorPanel.EditorNotes import EditorNotes
 
 class Warehouse(QtGui.QWidget, Observable):
     
@@ -19,8 +18,7 @@ class Warehouse(QtGui.QWidget, Observable):
         notesFolder = self.preferences.notesFolder
                 
         self.editorPanel = EditorNotes(notesFolder, self)
-        actions = NavigatorActions(self.editorPanel, notesFolder)
-        self.treePanel = DOMTreeWidget(self.preferences.xmlPath, actions)
+        self.treePanel = DOMTreeWidget(self.preferences.xmlPath, self.editorPanel)
         
         self.registerObserver(self.treePanel)     
         self.registerObserver(self.editorPanel)
@@ -95,8 +93,8 @@ class Warehouse(QtGui.QWidget, Observable):
         if not hasattr(self, "editorPanel"):
             return
         self.editorPanel.saveDoc()
-        actions = NavigatorActions(self.editorPanel, self.preferences.notesFolder)
-        self.treePanel.updateModel(self.preferences.xmlPath, actions)
+        self.editorPanel.notesFolder = self.preferences.notesFolder
+        self.treePanel.updateModel(self.preferences.xmlPath)
         
         
 
