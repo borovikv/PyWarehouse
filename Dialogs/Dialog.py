@@ -17,18 +17,25 @@ class DialogBox(QtGui.QWidget):
                             QtCore.Qt.Dialog)
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
         self.setWindowOpacity(0.95)
-        desktop = QtGui.QApplication.desktop()
-        centrX, centrY = (desktop.width() - width) / 2, (desktop.height() - height) / 2
+        centrX, centrY = self.getCenter(width, height)
         self.move(centrX, centrY)
     
+
+    def getCenter(self, width, height):
+        desktop = QtGui.QApplication.desktop()
+        centrX, centrY = (desktop.width() - width) / 2, (desktop.height() - height) / 2
+        return centrX, centrY
+
     def paintEvent(self, event):
-        width, height = self.width(), self.height()
-        xRound, yRound = 7.5 , 15
         painter = QtGui.QPainter(self)
-        qColor = QtGui.QColor(self.color)
-        painter.setPen(qColor)
-        painter.setBrush(QtGui.QBrush(qColor))
-        painter.drawRoundRect(QtCore.QRectF(0.0, 0.0, float(width), float(height)), xRound, yRound)
+        color = QtGui.QColor(self.color)
+        painter.setPen(color)
+        painter.setBrush(QtGui.QBrush(color))
+        
+        width, height = float(self.width()), float(self.height())
+        dialogRectangle = QtCore.QRectF(0.0, 0.0, width, height)
+        xRound, yRound = 7.5 , 15
+        painter.drawRoundRect(dialogRectangle, xRound, yRound)
 
 class LineDialog(DialogBox):
 
@@ -41,9 +48,8 @@ class LineDialog(DialogBox):
         
         self.makeButtons(buttons)
         hbox = QtGui.QHBoxLayout()
-        self.addButtonsToLayout(hbox, ('close',))
+        self.addButtonsToLayout(hbox)
         vbox.addLayout(hbox)
-                
         self.addCloseButton(vbox)
         
         self.setLayout(vbox)
@@ -59,23 +65,21 @@ class LineDialog(DialogBox):
 
     def makeButtons(self, buttons):
         self.buttons = {}
-        self.makeButton("close", "close", self.hide)
         for name, (text, listener) in buttons.items():
             self.makeButton(name, text, listener)
     
     def makeButton(self, name, text, listener):
         return self.buttons.setdefault(name, makeButton(text, func=listener))
 
-    def addButtonsToLayout(self, layout, exclude):
+    def addButtonsToLayout(self, layout):
         for name in sorted(self.buttons):
-            if exclude and name in exclude:
-                continue
             layout.addWidget(self.buttons[name])
                             
     def addCloseButton(self, vbox):
+        closeBut = makeButton("close", func=self.hide)
         hbox = QtGui.QHBoxLayout()
         hbox.addStretch()
-        hbox.addWidget(self.buttons.get('close'))
+        hbox.addWidget(closeBut)
         vbox.addLayout(hbox)
 
         

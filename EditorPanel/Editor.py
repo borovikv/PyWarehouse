@@ -15,8 +15,8 @@ from EditorPanel.EditorFilter import EditorFilter
 from Utils.Events import ObservableEvent
 from Dialogs.InsertDialog import InsertDialog
 from Utils import QUtils
-from Utils.utils import copy_img_html, delete_files,\
-    make_dir_if_not_exist, copy_local_file, copy_file, copy_folder, is_image, get_name
+from Utils.utils import copy_imgs, delete_files,\
+    make_dir_if_not_exist, copy_file, copy_file, copy_folder, is_image, get_name
 from PyQt4.QtCore import QString as _qstr
 from Dialogs.Dialog import FindReplaceDialog
 import re
@@ -76,7 +76,6 @@ class Editor(QWebView):
            'onOutdent': lambda: self.triggerPageAction(QtWebKit.QWebPage.Outdent),
            'onIndent': lambda: self.triggerPageAction(QtWebKit.QWebPage.Indent),
            'onPaste': self.pastePreparation,
-           'onCopy': self.setUrlForCopy,
            'onKeyPress': lambda: self.callJS('onKeyPressed'),
         }
         self.editor_actions = {
@@ -171,7 +170,7 @@ class Editor(QWebView):
         self.execCommand("insertHTML", htmlText)
 
     def copyImage(self, path):
-        return copy_file(path, self.getPathToFolder(Editor.IMG_FOLDER), None)
+        return copy_file(path, self.getPathToFolder(Editor.IMG_FOLDER))
 
     def copyFile(self, link):        
         link = _qstr(link)
@@ -181,7 +180,7 @@ class Editor(QWebView):
         if url.isValid():
             dst = self.getPathToFolder(Editor.FILES_FOLDER)
             make_dir_if_not_exist(dst) 
-            url = copy_local_file(unicode(url.toString(), 'utf-8')[7:], dst)
+            url = copy_file(unicode(url.toString(), 'utf-8')[7:], dst)
             
             return {"url":url, "name": get_name(url)}
 
@@ -199,37 +198,15 @@ class Editor(QWebView):
     ############################################################################  
     def pastePreparation(self):
         clipboard = QtGui.QApplication.clipboard() 
-        
         text = clipboard.text("html")
         if not text: 
             return        
-        
-        
-        newImgs = self.downloadAllImages(text)
-        if not newImgs: 
-            return
-        
-        self.replaceImageSrc(text, newImgs)
-            
+        dest = self.getPathToFolder(Editor.IMG_FOLDER)
+        text = copy_imgs(text, dest, os.path.dirname(self.path))
         data = QtCore.QMimeData()
         data.setHtml(text)
         clipboard.setMimeData(data)
 
-    def downloadAllImages(self, text):
-        dest = self.getPathToFolder(Editor.IMG_FOLDER)
-        newImgs = copy_img_html(text, dest, self.urlForCopy)
-        return newImgs
-                
-    def replaceImageSrc(self, text, newImgs):
-        # newImgs = [old_src: new_src]
-        for img in newImgs:
-            if img and newImgs[img]:
-                text.replace(_qstr(img), _qstr(newImgs[img]))
-
-    
-    def setUrlForCopy(self):
-        self.urlForCopy = self.path
-    
     #---------------------------------------------------------------------------
 
     def openDoc(self, path):

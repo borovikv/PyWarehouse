@@ -56,8 +56,6 @@ class EditorFilter(QObject):
         
         if self.isPasteEvent(event):
             return self.execute(obj, 'onPaste')
-        elif self.isCopyEvent(event):
-            return self.execute(obj, 'onCopy')
         elif self.isArrowEvent(event):
             return self.execute(obj, 'onArrow', self.arrowKeys[event.key()])
         elif event.key() == Qt.Key_Backtab:
