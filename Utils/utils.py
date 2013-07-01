@@ -57,7 +57,7 @@ def copy_imgs(html, dest, start=None):
     
     for img in imgs:
         src = dict(img.attrs).get('src')
-        new_path = copy_img(src, dest)
+        new_path = copy_img(src, dest, start)
         if not new_path:
             img.extract()
         img['src'] = new_path
