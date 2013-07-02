@@ -5,7 +5,7 @@ Created on Jul 11, 2012
 @author: vb
 '''
 
-def getTranslate(s, lang="ru"):
+def translate(s, lang="ru"):
     translations = {
                     "warehouseXML": "path to file", 
                     "browse": "Browse",

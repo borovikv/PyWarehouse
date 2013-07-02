@@ -6,7 +6,7 @@ Created on Jul 11, 2012
 '''
 from PyQt4 import QtGui, QtCore
 #from Utils.Strings import TStrings 
-from Utils.Strings import getTranslate as __
+from Utils.Strings import translate as __
 from Dialogs.Messages import Messages
 
 class PreferencesDialog(QtGui.QDialog):
