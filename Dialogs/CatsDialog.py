@@ -56,7 +56,6 @@ class Line(QtGui.QLineEdit, Observable):
 
     def event(self, event):
         if event.type() in (QEvent.KeyPress, QEvent.KeyRelease) and event.key() == Qt.Key_Tab:
-            self.parent().selectFirst()
             return True 
         return QtGui.QLineEdit.event(self, event)
 
@@ -101,7 +100,10 @@ class ListWidget(QtGui.QListWidget, Observable):
         self.notifyObservers(e)
     
     def notifyOnSelect(self):
-        text = self.currentItem().text()
+        item = self.currentItem()
+        if not item:
+            return
+        text = item.text()
         event = ObservableEvent(ObservableEvent.selectTextEvent, text=text)
         self.notifyObservers(event)
             
@@ -142,20 +144,30 @@ class CatsDialog(DialogBox, Observable):
         self.re_pre_cmd = re.compile(r'^(%s)\s*(.*)'%c)
         self.re_post_cmd = re.compile(r'^([^\s]*)\s+(%s)'%c)
 
+        self.createUI(width)
+        self.complectionList.registerObserver(self)
+        self.complectionList.registerObserver(self.cmd)
+        self.cmd.registerObserver(self)
+        self.cmd.registerObserver(self.complectionList)
+        
+    def createUI(self, width):
         self.createComplectionList(width)
         self.createCommandLine()
-        self.complection_list.registerObserver(self)
-        self.complection_list.registerObserver(self.cmd)
-        self.cmd.registerObserver(self)
-        self.cmd.registerObserver(self.complection_list)
         self.createBrowser()
         self.setBackground()
-        self.createUI()
-
+        hbox = QtGui.QHBoxLayout()
+        hbox.addWidget(self.complectionList)
+        hbox.addWidget(self.browser)
+        vboxCmd = QtGui.QVBoxLayout()
+        vboxCmd.addWidget(self.cmd)
+        vboxCmd.addLayout(hbox)
+        self.setAutoFillBackground(True)
+        self.setLayout(vboxCmd)
+        self.setWindowModality(Qt.ApplicationModal)
+    
     def createComplectionList(self, width):
-        self.complection_list = ListWidget(self)
-        self.complection_list.setMaximumWidth(width * 0.2)
-
+        self.complectionList = ListWidget(self)
+        self.complectionList.setMaximumWidth(width * 0.2)
 
     def createCommandLine(self):
         self.cmd = Line(self)
@@ -165,96 +177,47 @@ class CatsDialog(DialogBox, Observable):
         completer.setCompletionMode(QtGui.QCompleter.InlineCompletion)
         self.cmd.setCompleter(completer)
 
-
     def createBrowser(self):
         self.browser = Browser()
         self.browser.setFocusPolicy(Qt.NoFocus)
 
-
     def setBackground(self):
         css = "background-color:%s" % self.color
-        self.complection_list.setStyleSheet(css)
+        self.complectionList.setStyleSheet(css)
         self.cmd.setStyleSheet(css)
         self.browser.setStyleSheet(css)
-
-
-    def createUI(self):
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(self.complection_list)
-        hbox.addWidget(self.browser)
-        vboxCmd = QtGui.QVBoxLayout()
-        vboxCmd.addWidget(self.cmd)
-        vboxCmd.addLayout(hbox)
-        self.setAutoFillBackground(True)
-        self.setLayout(vboxCmd)
-        self.setWindowModality(Qt.ApplicationModal)
-
     
     def getAllActions(self):
         allActions = self.actions + self.catsActions.keys()
         allActions.sort()
         return allActions
     
-    
+    #--------------------------------------------------------------------------
+    # Events
+    #--------------------------------------------------------------------------
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
             self.hide()
         return DialogBox.keyPressEvent(self, event)
+    #--------------------------------------------------------------------------
     
     def show(self, text):
         self.selected_text = text
         return DialogBox.show(self)
+    #--------------------------------------------------------------------------
     
-    def showCompletion(self, text):
-        self.complection_list.clear()
-        actions = self.findActionsByString(text)
-        for i in actions:
-            item = QtGui.QListWidgetItem(self.complection_list)
-            item.setText(i)
-        self.complection_list.setCurrentItem(self.complection_list.item(0))
-        self.setHelpText(actions[0])
-    
-    def findActionsByString(self, text):
-        actions = None
-        if not unicode(text).strip() == u"":
-            pattern = re.compile(r'\b%s'%text)
-            actions = [ i for i in self.getAllActions() if re.findall(pattern, i) ]
-        return actions or self.getDefaultActions()
-    
-    def getDefaultActions(self):
-        keys = self.catsActions.keys()
-        keys.sort()
-        return keys
-    
-    def selectFirst(self):
-        text = self.complection_list.item(0).text()
-        self.choose(text)
-
-    def choose(self, text):
-        self.cmd.setText(text)
-        self.setHelpText(text)
-    
-    
-    def setHelpText(self, choice):
-        self.browser.clear()
-        text = self.getHelpText(choice)
-        self.browser.setHtml(text) 
-         
-    def getHelpText(self, choice):
-        descr = getDescription(choice)
-        cmd, params = self.parse_cmd()
-        if not cmd == 'all' and params:
-            return '%s => %s'%(descr, params)
-        return descr
-
     def onUpdate(self, event):
         if event.type == ObservableEvent.execute:
             self.onExecute(event)
+            
         if event.type == ObservableEvent.selectTextEvent:
             text = event.getParam('text')
-            self.choose(text)
+            self.cmd.setText(text)
+            self.setHelpText(text)
+            
         if event.type == ObservableEvent.chooseEvent:
             self.onChooseEvent()
+            
         if event.type == ObservableEvent.keyPressEvent:
             text = self.cmd.getCurrentText()
             self.showCompletion(text)
@@ -267,6 +230,7 @@ class CatsDialog(DialogBox, Observable):
             action(params)
         if cmd.lower() not in ('all', 'search'):
             self.hide()
+    #--------------------------------------------------------------------------
     
     def onChooseEvent(self):
         cmd, params = self.parse_cmd()
@@ -288,6 +252,47 @@ class CatsDialog(DialogBox, Observable):
                 return "", ""
             params = f[0][0] if f[0][0] else self.selected_text
             return f[0][1], params
+    #--------------------------------------------------------------------------
+    
+    def setHelpText(self, choice):
+        self.browser.clear()
+        text = self.getHelpText(choice)
+        self.browser.setHtml(text) 
+         
+    def getHelpText(self, choice):
+        descr = getDescription(choice)
+        cmd, params = self.parse_cmd()
+        if not cmd == 'all' and params:
+            return '%s => %s'%(descr, params)
+        return descr
+    #--------------------------------------------------------------------------
+    
+    def showCompletion(self, text):
+        self.complectionList.clear()
+        actions = self.findActionsByString(text)
+        for i in actions:
+            item = QtGui.QListWidgetItem(self.complectionList)
+            item.setText(i)
+        self.complectionList.setCurrentItem(self.complectionList.item(0))
+        self.setHelpText(actions[0])
+    
+
+    def matchActions(self, itemText, text):
+        patternItem = r'.*%s.*'%itemText
+        patternText = r'.*%s.*'%text
+        return re.match(patternItem, text, re.I) or re.match(patternText, itemText, re.I)
+    
+    
+    def findActionsByString(self, text):
+        actions = None
+        if not unicode(text).strip() == u"":
+            actions = [ i for i in self.getAllActions() if self.matchActions(i, text)]
+                            
+        default = self.catsActions.keys()
+        default.sort()
+        return actions or default
+    #--------------------------------------------------------------------------
+    
     
     def openUrl(self, url):
         QtGui.QDesktopServices.openUrl(QUrl(url))

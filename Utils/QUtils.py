@@ -67,7 +67,6 @@ def getShortcut(*keys):
         'SHIFT': _.SHIFT
     }
     sequence = sum([qtkeys.get(key) for key in keys if qtkeys.get(key)])
-    print sequence
     if sequence:
         return QtGui.QKeySequence(sequence)
 
