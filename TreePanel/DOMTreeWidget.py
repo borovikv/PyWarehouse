@@ -119,7 +119,7 @@ class DOMTreeWidget(QtGui.QTreeView):
             self.actions.call(name, *args, **kwargs)
 
     # UPDATE
-    def update(self, event):
+    def onUpdate(self, event):
         isStartEvent = ( event.type == ObservableEvent.start 
                          and event.getParam(ObservableEvent.name))
         if isStartEvent:

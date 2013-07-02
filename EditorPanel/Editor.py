@@ -16,7 +16,7 @@ from Utils.Events import ObservableEvent
 from Dialogs.InsertDialog import InsertDialog
 from Utils import QUtils
 from Utils.utils import copy_imgs, delete_files,\
-    make_dir_if_not_exist, copy_file, copy_file, copy_folder, is_image, get_name
+    make_dir_if_not_exist, copy_file, copy_folder, is_image, get_name
 from PyQt4.QtCore import QString as _qstr
 from Dialogs.Dialog import FindReplaceDialog
 import re
@@ -282,7 +282,7 @@ class Editor(QWebView):
             return action()
 
     # Observe
-    def update(self, event):
+    def onUpdate(self, event):
         if event.type == ObservableEvent.start:
             self.on_start(event)
         

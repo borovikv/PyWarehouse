@@ -50,7 +50,6 @@ class LineDialog(DialogBox):
         hbox = QtGui.QHBoxLayout()
         self.addButtonsToLayout(hbox)
         vbox.addLayout(hbox)
-        self.addCloseButton(vbox)
         
         self.setLayout(vbox)
     
@@ -87,6 +86,11 @@ class LineDialog(DialogBox):
         if position < len(self.lines):
             return self.lines[position].text()
     
+    def keyPressEvent(self, event):
+        if event.key() == QtCore.Qt.Key_Escape:
+            self.hide()
+        return DialogBox.keyPressEvent(self, event)
+    
 class FindReplaceDialog(LineDialog):
     def __init__(self, parent):
         buttons = {
@@ -102,6 +106,16 @@ class FindReplaceDialog(LineDialog):
     
     def textToReplace(self):
         self.getLineText(1)
+    
+    def setTextToFind(self):   
+        selectedText = self.parent().selectedText()
+        findLine = self.lines[0]
+        findLine.setText(selectedText)
+        findLine.setSelection(0, len(selectedText))
+        
+    def show(self):
+        self.setTextToFind()
+        return LineDialog.show(self)
           
 if __name__=="__main__":
     import sys

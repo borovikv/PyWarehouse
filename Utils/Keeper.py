@@ -6,7 +6,6 @@ Created on 22.05.2012
 '''
 import os
 from XMLFile.XML import XML, createXmlWithRoot
-from xml.dom.minidom import getDOMImplementation
 from PyWarehouse import Settings
 
 class Keeper:
