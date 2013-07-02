@@ -16,26 +16,17 @@ td{
 	height: 1em;
 }
 
-
-.Task{
-	list-style: none;
+.TaskGroup li{
+	list-style-image: url('../_source/unchecked.png');
 	border-bottom: 2px solid #888;
+	line-height: 1.5em;	
 }
-.TaskDone{
+li.Task{
+	list-style-image: url('../_source/unchecked.png');
+}
+li.TaskDone{
 	color: #888;
 	text-decoration: line-through;
+	list-style-image: url('../_source/checked.png');
 }
-.CheckBox{
-	display: block;
-	position: relative;
-	left: -1.5em;
-	top: 1em;
-	width: 16px;
-	height: 16px;
-}
-.CheckBox.Unchecked{
-	background: url('../_source/unchecked.png');
-}
-.CheckBox.Checked{
-	background: url('../_source/checked.png');
-}
+

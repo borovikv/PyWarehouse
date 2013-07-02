@@ -72,11 +72,9 @@ class Editor(QWebView):
     def createActions(self):
         self.events = {
            'onArrow': self.onArrow,
-           'onEnter': lambda: self.callJS('onEnter'),
            'onOutdent': lambda: self.triggerPageAction(QtWebKit.QWebPage.Outdent),
            'onIndent': lambda: self.triggerPageAction(QtWebKit.QWebPage.Indent),
            'onPaste': self.pastePreparation,
-           'onKeyPress': lambda: self.callJS('onKeyPressed'),
         }
         self.editor_actions = {
             "column after": 'onInsertColAfter', 
@@ -256,8 +254,8 @@ class Editor(QWebView):
 
     def getHtml(self):
         html = unicode(self.page().mainFrame().toHtml())
-        return self.insertHeader(html, self.defaultHeader)
-
+        #return self.insertHeader(html, self.defaultHeader)
+        return html
     ############################################################################
     #
     # Events

@@ -62,10 +62,6 @@ class EditorFilter(QObject):
             return self.execute(obj, 'onOutdent')
         elif event.key()  == Qt.Key_Tab:
             return self.execute(obj, 'onIndent')
-        elif not self.shiftPressed(event) and event.key() in ( Qt.Key_Enter, Qt.Key_Return, ):
-            return self.execute(obj, 'onEnter')
-        elif not ( event.key() in ( Qt.Key_Left, Qt.Key_Right, ) ): 
-            return self.execute(obj, 'onKeyPress')
         
         return QObject.eventFilter(self, obj, event)
 
