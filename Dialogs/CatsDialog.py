@@ -276,13 +276,6 @@ class CatsDialog(DialogBox, Observable):
         self.complectionList.setCurrentItem(self.complectionList.item(0))
         self.setHelpText(actions[0])
     
-
-    def matchActions(self, itemText, text):
-        patternItem = r'.*%s.*'%itemText
-        patternText = r'.*%s.*'%text
-        return re.match(patternItem, text, re.I) or re.match(patternText, itemText, re.I)
-    
-    
     def findActionsByString(self, text):
         actions = None
         if not unicode(text).strip() == u"":
@@ -291,6 +284,11 @@ class CatsDialog(DialogBox, Observable):
         default = self.catsActions.keys()
         default.sort()
         return actions or default
+
+    def matchActions(self, itemText, text):
+        patternItem = r'.*%s.*'%itemText
+        patternText = r'.*%s.*'%text
+        return re.match(patternItem, text, re.I) or re.match(patternText, itemText, re.I)
     #--------------------------------------------------------------------------
     
     
