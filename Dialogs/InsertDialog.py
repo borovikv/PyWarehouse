@@ -4,7 +4,7 @@ Created on Jul 15, 2012
 @author: vb
 '''
 from PyQt4 import QtGui, QtCore
-from Utils.Strings import translate as __
+from Utils.Translator import translate as __
 from Dialogs.Dialog import DialogBox
 
 class InsertDialog(QtGui.QDialog):
