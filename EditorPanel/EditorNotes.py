@@ -5,7 +5,7 @@ Created on Jun 28, 2013
 '''
 import os
 from EditorPanel.Editor import Editor
-from Utils.Events import ObservableEvent
+from Utils.Observable import ObservableEvent
 
 class EditorNotes(Editor):    
     def __init__(self, notesFolder, parent = None):

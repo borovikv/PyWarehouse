@@ -12,9 +12,9 @@ from os.path import join
 import shutil
 import locale
 from EditorPanel.EditorFilter import EditorFilter
-from Utils.Events import ObservableEvent
 from Dialogs.InsertDialog import InsertDialog
 from Utils import QUtils
+from Utils.Observable import ObservableEvent
 from Utils.utils import copy_imgs, delete_files,\
     make_dir_if_not_exist, copy_file, copy_folder, is_image, get_name
 from PyQt4.QtCore import QString as _qstr

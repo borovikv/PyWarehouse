@@ -3,7 +3,7 @@ from TreePanel.DOMTreeWidget import DOMTreeWidget
 from Utils.Preferences import Preferences
 from Utils.Observable import Observable
 from Utils.Keeper import Keeper
-from Utils.Events import ObservableEvent
+from Utils.Observable import ObservableEvent
 from Dialogs.CatsDialog import CatsDialog
 from Utils.QUtils import makeButton, getShortcut, addShortcutAction, Icon
 from EditorPanel.EditorNotes import EditorNotes

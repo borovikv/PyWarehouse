@@ -12,6 +12,8 @@ class ObservableEvent:
     execute = "execute"
     selectTextEvent = 'selectText'
     keyPressEvent = 'keyPressEvent'
+    chooseEvent = 'chooseEvent'
+    arrowEvent = 'onArrow'
     
     def __init__(self, t, **params):
         self.type = t

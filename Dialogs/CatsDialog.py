@@ -6,8 +6,7 @@ Created on Jul 15, 2012
 from PyQt4 import QtGui
 from PyQt4.QtCore import Qt, QUrl, QEvent
 from Dialogs.Dialog import DialogBox
-from Utils.Events import ObservableEvent
-from Utils.Observable import Observable
+from Utils.Observable import Observable, ObservableEvent
 import re
 
 def getDescription(s):
@@ -39,70 +38,82 @@ def getDescription(s):
      }.get(s, "")
 
 #-------------------------------------------------------------------------------    
-class Line(QtGui.QLineEdit):
+class Line(QtGui.QLineEdit, Observable):
     def __init__(self, parent=None):
-        self.parent = parent
-        super(Line, self).__init__(parent)
-    
-    def keyPressEvent(self, event):
-        if event.key() in (Qt.Key_Up, Qt.Key_Down):
-            self.parent.delegateEvent(event, self)
-            event.ignore()
-        elif event.key() in (Qt.Key_Return, Qt.Key_Enter):
-            self.parent.evaluate()
-
-        return QtGui.QLineEdit.keyPressEvent(self, event)       
+        QtGui.QLineEdit.__init__(self, parent)
+        Observable.__init__(self)
     
     def keyReleaseEvent(self, event):
-        if event.key() not in (Qt.Key_Return, Qt.Key_Enter):
-            text = self.text().remove(self.selectedText())
-            self.parent.showCompletion(text)
-        
+        if event.key() in (Qt.Key_Up, Qt.Key_Down):
+            e = ObservableEvent(ObservableEvent.arrowEvent, event=event)
+        elif event.key() in (Qt.Key_Return, Qt.Key_Enter):
+            e = ObservableEvent(ObservableEvent.chooseEvent, event=event)
+        else:
+            e = ObservableEvent(ObservableEvent.keyPressEvent)
+        self.notifyObservers(e)
+
         return QtGui.QLineEdit.keyReleaseEvent(self, event)
-    
+
     def event(self, event):
         if event.type() in (QEvent.KeyPress, QEvent.KeyRelease) and event.key() == Qt.Key_Tab:
-            self.parent.selectFirst()
+            self.parent().selectFirst()
             return True 
         return QtGui.QLineEdit.event(self, event)
-    
+
     def onUpdate(self, event):
-        pass
-    
-    
+        if event.type == ObservableEvent.keyPressEvent:
+            self.setFocus(Qt.ShortcutFocusReason)
+            self.deselect()
+            e = event.getParam('event')
+            self.keyPressEvent(e)
+
+    def getCurrentText(self):
+        selectedText = self.selectedText()
+        text = self.text()
+        text = text.remove(selectedText)
+        return text
     
 #-------------------------------------------------------------------------------
 class ListWidget(QtGui.QListWidget, Observable):
     def __init__(self, parent=None): 
         QtGui.QListWidget.__init__(self, parent)
         Observable.__init__(self)
-        self.shortcut_focus = False
+        self.isFocusIn = False
     
     def keyPressEvent(self, event):
         isArrowEvent = event.key() in ( Qt.Key_Down, Qt.Key_Up, )
-        
-        if self.shortcut_focus and isArrowEvent:
+        if self.isFocusIn and isArrowEvent:
             row = 0 if event.key() == Qt.Key_Down else  self.count() - 1
             self.setCurrentRow(row)
-            self.shortcut_focus = False 
+            self.isFocusIn = False 
         
-        elif not self.shortcut_focus and isArrowEvent:
+        elif not self.isFocusIn and isArrowEvent:
             super(ListWidget, self).keyPressEvent(event)
         
         if not isArrowEvent:
-            e = ObservableEvent('keyPress', event=event)
-            self.notifyObservers(e)
-        text  = self.currentItem().text()
-        e = ObservableEvent('selectText', text=text)
+            self.notyfyOnKeyPress(event)
+            
+        if isArrowEvent or event.key() in ( Qt.Key_Enter, Qt.Key_Return, ):
+            self.notifyOnSelect()
+    
+    def notyfyOnKeyPress(self, event):
+        e = ObservableEvent(ObservableEvent.keyPressEvent, event=event)
         self.notifyObservers(e)
     
+    def notifyOnSelect(self):
+        text = self.currentItem().text()
+        event = ObservableEvent(ObservableEvent.selectTextEvent, text=text)
+        self.notifyObservers(event)
+            
     def onUpdate(self, event):
-        pass
+        if event.type == ObservableEvent.arrowEvent:
+            self.setFocus(Qt.ShortcutFocusReason)
+            e = event.getParam('event')
+            self.keyPressEvent(e)
     
     def focusInEvent(self, event):
-        self.shortcut_focus = event.reason() == Qt.ShortcutFocusReason
-        if not self.shortcut_focus:
-            self.parent().choose(self.currentItem().text()) 
+        self.isFocusIn = event.reason() == Qt.ShortcutFocusReason
+        self.notifyOnSelect()
         return QtGui.QListWidget.focusInEvent(self, event)
 
 #-------------------------------------------------------------------------------
@@ -135,6 +146,8 @@ class CatsDialog(DialogBox, Observable):
         self.createCommandLine()
         self.complection_list.registerObserver(self)
         self.complection_list.registerObserver(self.cmd)
+        self.cmd.registerObserver(self)
+        self.cmd.registerObserver(self.complection_list)
         self.createBrowser()
         self.setBackground()
         self.createUI()
@@ -204,7 +217,7 @@ class CatsDialog(DialogBox, Observable):
     def findActionsByString(self, text):
         actions = None
         if not unicode(text).strip() == u"":
-            pattern = re.compile(r'\b%s.*'%text)
+            pattern = re.compile(r'\b%s'%text)
             actions = [ i for i in self.getAllActions() if re.findall(pattern, i) ]
         return actions or self.getDefaultActions()
     
@@ -212,15 +225,6 @@ class CatsDialog(DialogBox, Observable):
         keys = self.catsActions.keys()
         keys.sort()
         return keys
-    
-    def delegateEvent(self, event, who):
-        if isinstance(who, ListWidget):
-            self.cmd.setFocus(Qt.ShortcutFocusReason)
-            self.cmd.deselect()
-            self.cmd.keyPressEvent(event)
-        elif isinstance(who, Line):
-            self.complection_list.setFocus(Qt.ShortcutFocusReason)
-            self.complection_list.keyPressEvent(event)
     
     def selectFirst(self):
         text = self.complection_list.item(0).text()
@@ -243,13 +247,34 @@ class CatsDialog(DialogBox, Observable):
             return '%s => %s'%(descr, params)
         return descr
 
-    def evaluate(self):
+    def onUpdate(self, event):
+        if event.type == ObservableEvent.execute:
+            self.onExecute(event)
+        if event.type == ObservableEvent.selectTextEvent:
+            text = event.getParam('text')
+            self.choose(text)
+        if event.type == ObservableEvent.chooseEvent:
+            self.onChooseEvent()
+        if event.type == ObservableEvent.keyPressEvent:
+            text = self.cmd.getCurrentText()
+            self.showCompletion(text)
+            
+            
+    def onExecute(self, event):
+        cmd, params = event.getParam('command'), event.getParam('params')
+        action = self.catsActions.get(cmd)
+        if action:
+            action(params)
+        if cmd.lower() not in ('all', 'search'):
+            self.hide()
+    
+    def onChooseEvent(self):
         cmd, params = self.parse_cmd()
         if cmd:
             event = ObservableEvent(ObservableEvent.execute, command=cmd, params=params)
             self.notifyObservers(event)
             self.hide()
-        Observable.notifyObservers(self, event)
+            Observable.notifyObservers(self, event)
     
     def parse_cmd(self):
         cmd = unicode(self.cmd.text())
@@ -263,23 +288,6 @@ class CatsDialog(DialogBox, Observable):
                 return "", ""
             params = f[0][0] if f[0][0] else self.selected_text
             return f[0][1], params
-    
-
-
-    def onUpdate(self, event):
-        if event.type == ObservableEvent.execute:
-            self.onExecute(event)
-        if event.type == ObservableEvent.selectTextEvent:
-            text = event.getParam('text')
-            self.choose(text)
-            
-    def onExecute(self, event):
-        cmd, params = event.getParam('command'), event.getParam('params')
-        action = self.catsActions.get(cmd)
-        if action:
-            action(params)
-        if cmd.lower() not in ('all', 'search'):
-            self.hide()
     
     def openUrl(self, url):
         QtGui.QDesktopServices.openUrl(QUrl(url))

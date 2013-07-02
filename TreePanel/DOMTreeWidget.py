@@ -5,9 +5,9 @@ from PyQt4 import QtCore, QtGui;
 
 from TreePanel.TreeDialog import TreeDialog;
 from TreePanel.TreeModel import TreeModel;
-from Utils.Events import ObservableEvent
 from Utils.Keeper import Keeper
 from Utils.QUtils import createQAction
+from Utils.Observable import ObservableEvent
 
 class DOMTreeWidget(QtGui.QTreeView):
     def __init__(self, xmlFileName, actions=None, parent=None):
