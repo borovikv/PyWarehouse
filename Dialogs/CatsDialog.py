@@ -137,7 +137,6 @@ class CatsDialog(DialogBox, Observable):
         self.catsActions = {
             "google": self.google, 
             "wikipedia": self.wikipedia,
-            "search": self.search,
             "all": self.showAllCommands
         }
         c = '|'.join(self.getAllActions())
@@ -228,7 +227,7 @@ class CatsDialog(DialogBox, Observable):
         action = self.catsActions.get(cmd)
         if action:
             action(params)
-        if cmd.lower() not in ('all', 'search'):
+        if cmd.lower() not in ('all', ):
             self.hide()
     #--------------------------------------------------------------------------
     
@@ -301,9 +300,6 @@ class CatsDialog(DialogBox, Observable):
     
     def wikipedia(self, *text):
         self.openUrl('http://ru.wikipedia.org/w/index.php?search=%s'%text[0])
-    
-    def search(self, text):
-        self.browser.setHtml("<a href='google.com'>%s</a>"%text)
     
     def showAllCommands(self, *text):
         self.showCompletion(self.getAllActions())
