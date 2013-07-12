@@ -1,0 +1,32 @@
+body{
+	width: 95%;
+	margin-left: 2.5%;
+	margin-right: 2.5%;
+	margin-top: 20px;
+	margin-bottom: 20px;
+}
+table{
+	border-spacing: 0;
+	width: 100%;
+}
+td{
+	border: 1px solid black;
+	padding: 5px;
+	margin: 0;
+	height: 1em;
+}
+
+.TaskGroup li{
+	list-style-image: url('../_source/unchecked.png');
+	border-bottom: 2px solid #888;
+	line-height: 1.5em;	
+}
+li.Task{
+	list-style-image: url('../_source/unchecked.png');
+}
+li.TaskDone{
+	color: #888;
+	text-decoration: line-through;
+	list-style-image: url('../_source/checked.png');
+}
+
